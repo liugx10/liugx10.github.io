@@ -1,0 +1,14 @@
+# Claude Code configuration — not part of the site
+.claude/
+CLAUDE.md
+
+# Jekyll build output and local dependencies
+_site/
+.jekyll-cache/
+.jekyll-metadata
+Gemfile.lock
+vendor/
+
+# OS / editor cruft
+.DS_Store
+*.swp

@@ -1,3 +1,113 @@
-title: Liu Guoxuan的个人博客
-description: 记录技术与生活
-theme: minima
+# Liu Guoxuan 的个人博客 —— 站点全局配置
+#
+# 主题：Minimal Mistakes，以「远程主题」方式安装（GitHub Pages 的主题白名单里
+# 没有它，但 jekyll-remote-theme 在白名单内，所以不必改用 GitHub Actions）。
+#
+# 注意：主题自带的 _config.yml 不会被继承——Jekyll 只从主题挂载 _layouts、
+# _includes、_sass、assets 四个目录。因此主题需要的配置必须全部写在本文件里，
+# 不能指望从 mmistakes/minimal-mistakes 那边读到默认值。
+
+# ---------- 主题 ----------
+# theme: 和 remote_theme: 只能留一个。这里用 remote_theme，原先的 theme: minima 已删除。
+# 末尾的 @4.28.1 是版本号，升级时改这里，不要留空（留空会跟随 master，构建结果不稳定）。
+remote_theme: "mmistakes/minimal-mistakes@4.28.1"
+# 皮肤。可选：default air aqua contrast dark dirt neon mint plum sunrise
+#       catppuccin_latte catppuccin_mocha
+minimal_mistakes_skin: "default"
+
+# ---------- 站点信息 ----------
+locale: "zh-CN"                 # 界面文案语言，主题内置简体中文
+title: "Liu Guoxuan的个人博客"
+title_separator: "-"
+name: "Liu Guoxuan"
+description: "记录技术与生活"
+url: "https://liugx10.github.io"   # 分享按钮、feed、绝对链接都要用到
+repository: "liugx10/liugx10.github.io"
+date_format: "%Y 年 %-m 月 %-d 日"  # 文章日期格式（strftime，% 后加减号表示去掉前导零）
+
+# 作者资料卡：显示在文章页左侧栏
+author:
+  name: "Liu Guoxuan"
+  bio: "记录技术与生活"
+  links:
+    - label: "GitHub"
+      icon: "fab fa-fw fa-github"
+      url: "https://github.com/liugx10"
+
+footer:
+  links:
+    - label: "GitHub"
+      icon: "fab fa-fw fa-github"
+      url: "https://github.com/liugx10"
+
+# ---------- 网址 ----------
+# 分类会成为网址的一部分：categories: 随笔 的文章 → /随笔/hello-world/
+permalink: /:categories/:title/
+paginate: 5
+paginate_path: /page:num/
+
+# ---------- 构建 ----------
+markdown: kramdown
+highlighter: rouge
+excerpt_separator: "\n\n"
+
+kramdown:
+  input: GFM
+  hard_wrap: false
+  auto_ids: true
+  footnote_nr: 1
+  entity_output: as_char
+  toc_levels: 1..6
+  smart_quotes: lsquo,rsquo,ldquo,rdquo
+  enable_coderay: false
+
+sass:
+  sass_dir: _sass
+  style: compressed
+
+# 下划线开头的目录默认不处理，_pages 要显式包含进来才能被构建
+include:
+  - _pages
+
+# 只能用 GitHub Pages 白名单内的插件，写别的会导致线上构建失败
+plugins:
+  - jekyll-paginate
+  - jekyll-sitemap
+  - jekyll-gist
+  - jekyll-feed
+  - jekyll-include-cache   # Minimal Mistakes 必须，缺了会报 Unknown tag 'include_cached'
+
+# 文章/页面的默认值，新文章不必在 front matter 里重复写
+defaults:
+  # _posts
+  - scope:
+      path: ""
+      type: posts
+    values:
+      layout: single          # 主题没有名为 post 的 layout，文章用的是 single
+      author_profile: true
+      show_date: true         # 不写这项，文章页不会显示日期
+      read_time: false        # 阅读时长按空格分词统计，中文正文会被算成个位数，
+                              # 一律显示「少于 1 分钟」，所以关闭
+      share: true             # 文章底部的分享按钮
+      related: true           # 文章底部的「猜您还喜欢」
+  # _pages
+  - scope:
+      path: "_pages"
+      type: pages
+    values:
+      layout: single
+      author_profile: true
+
+# 不发布到网站的文件（前 7 项是 Jekyll 默认值，必须一并列出，否则设置 exclude 会覆盖默认值）
+exclude:
+  - Gemfile
+  - Gemfile.lock
+  - node_modules
+  - vendor/bundle/
+  - vendor/cache/
+  - vendor/gems/
+  - vendor/ruby/
+  - README.md
+  - CLAUDE.md
+  - JEKYLL_GUIDE.md
