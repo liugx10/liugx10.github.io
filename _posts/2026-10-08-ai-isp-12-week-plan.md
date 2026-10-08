@@ -6,7 +6,7 @@ categories: 技术
 tags: ["ISP", "RAW", "图像处理", "学习计划"]
 toc: true
 toc_sticky: true
-excerpt: "一份按真实工作链排序的 AI-ISP 学习计划：从传感器成像物理和手写 ISP 起步，经过 RAW-to-RGB 训练、3A 调优、多帧与生成式，最后落到量化压缩与 TensorRT 部署。12 周，每周 15–20 小时。"
+excerpt: "一份按真实工作链排序的 AI-ISP 学习计划，每周给出目标、任务清单、产出和自测题：从传感器成像物理和手写 ISP 起步，经过 RAW-to-RGB 训练、3A 调优、多帧与生成式，最后落到量化压缩与 TensorRT 部署。12 周，每周 15–20 小时。"
 ---
 
 学习 AI-ISP 最容易走偏的地方，是按「模型难度」排序去学——先啃一遍扩散模型，回头却说不清黑电平为什么按通道标定、RAW 域到底该在链路哪一步降噪。这份计划换一个排序依据：**按真实的工作链来**。
@@ -17,6 +17,8 @@ excerpt: "一份按真实工作链排序的 AI-ISP 学习计划：从传感器�
 
 - **硬件**：计划假设 24G 显存 + 64G 内存（例如 4090 + 64G），这个配置足够跑 RAW-to-RGB 级别的训练与部署验证。短板只在数据集磁盘空间——ZRR、MAI2022 这类数据集加起来体量可观，**建议预留 2–4TB NVMe**。
 - **节奏**：15–20 小时/周是业余推进的强度。脱产学习可以压缩到 6–8 周，压缩的是等待训练的时间，不是动手的部分。
+
+每周的写法固定成四段：**目标**（这周结束你会什么）、**任务清单**（带小时估算，每周 15–20 小时）、**产出**（可交付的东西）、**自测**（答不上来就别往下走，回去补）。小时数按 15–20 小时/周折算，可以按自己的节奏缩放。
 
 ## 一、三条主线与验收标准
 
@@ -32,77 +34,158 @@ excerpt: "一份按真实工作链排序的 AI-ISP 学习计划：从传感器�
 
 ### W1 成像物理与传感器
 
-**内容**：光电转换、量子效率、满阱容量、光子转移曲线（PTC）、散粒噪声与读出噪声、SNR 与 ISO 的关系、黑电平、PRNU/DSNU、微透镜与串扰、CFA（Bayer / 四合一方阵 / RGBW）、HDR 传感器模式（DOL-HDR、交错曝光）、卷帘快门。
+**目标**：说清一个 RAW 数值从光子到 ADC 的完整路径，能从 DNG 里读出标定参数，能画 PTC 并粗略估出读出噪声。
 
-**动手**：用 rawpy 读 20 张 DNG，打印 `black_level_per_channel`、`white_level`、`raw_pattern`、`color_matrix`、`cam_xyz_matrix` 以及 EXIF 里的 ISO/快门/增益；画直方图与 PTC 曲线，估算读出噪声。
+**任务清单**（约 18h）：
 
-**产出**：《我的第一份 RAW 元数据报告》。
+- 学（6h）：光电转换与量子效率、满阱容量、光子转移曲线（PTC）、散粒噪声与读出噪声、SNR 与 ISO 的关系、黑电平、PRNU/DSNU、微透镜与串扰、CFA（Bayer / 四合一方阵 / RGBW）、HDR 传感器模式（DOL-HDR、交错曝光）、卷帘快门。
+- 动手（8h）：用 rawpy 批量读 20 张不同 ISO 的 DNG，打印 `black_level_per_channel`、`white_level`、`raw_pattern`、`color_matrix`、`cam_xyz_matrix` 以及 EXIF 里的 ISO / 快门 / 增益。写一个 `inspect_raw.py`，把每个通道的直方图标出黑电平与饱和点。
+- 动手（2h）：拍一组灰卡序列（同一场景、逐档 ISO），按通道算均值与方差，画 PTC；用线性段拟合「方差 vs 均值」，斜率对应转换增益、截距对应读出噪声。
+- 整理（2h）：写《我的第一份 RAW 元数据报告》。
+
+**产出**：`inspect_raw.py`（可复用）+ 一份元数据报告（机型 / ISO / 四通道黑电平 / 白电平 / CFA 排布 / 色彩矩阵 / 结论）。
+
+**自测**：
+
+- 黑电平为什么必须按通道标定？只用一个常数会在图上看到什么现象？
+- PTC 的斜率与截距分别对应什么物理量？
+- Quad Bayer 与普通 Bayer 在「读出一张图」这件事上有什么差别？
+- 什么拍摄条件下会暴露卷帘快门？
 
 ### W2 传统 ISP 模块逐个击破
 
-**内容**：按真实 pipeline 的顺序推进——BLC → DPC/BPC → LSC → RAW 域降噪 → AWB（RAW 域增益）→ Demosaic → CCM → 线性化/Gamma → 色调映射 → 2D/3D NR → Sharpen → 色彩增强/肤色保护 → YUV 转换。
+**目标**：手写一条能跑的 mini-ISP，并说清每个模块的输入输出位深、处在线性域还是非线性域，以及顺序为什么不能换。
 
-**动手**：用 NumPy 实现 BLC、双线性/双三次/Hamilton-Adams demosaic、灰度世界 AWB、3×3 CCM、Gamma，再和 `rawpy.postprocess()` 的不同参数组合做对比图。
+**任务清单**（约 20h）：
 
-**关键认知**：**顺序不可乱**——DPC 必须在 demosaic 之前，AWB 要在 RAW 域做；同时每个模块的输入输出位深、处在线性域还是非线性域，都要能说清。
+- 实现（10h）：按真实 pipeline 顺序写——BLC → LSC（增益表或多项式近似）→ RAW 域降噪 → AWB（RAW 域增益）→ Demosaic（先双线性，再双三次和 Hamilton-Adams）→ CCM（3×3）→ 线性化/Gamma → 色调映射 → 2D/3D NR → Sharpen → 色彩增强/肤色保护 → YUV 转换。
+- 测试（4h）：**每个模块先用合成图单独验证**——造一张已知黑电平、已知 CFA 相位、已知白点的图，看模块输出是否等于解析解。直接上真实 RAW 调不通会很难定位。
+- 对照（4h）：与 `rawpy.postprocess()` 的不同参数组合比对，例如 `use_camera_wb`、`no_auto_bright`、`output_bps=16`、线性输出（gamma=(1,1)）与不同 `demosaic_algorithm`，做并排对比图。
+- 画图（2h）：画一张 pipeline 图，每一级标上位深与所在域。
+
+**产出**：`mini_isp/`（可运行）+ 对比图 + 标注了域与位深的 pipeline 图。
+
+**自测**：
+
+- 为什么 DPC 必须在 demosaic 之前？
+- AWB 为什么在 RAW 域做增益，而不是在 sRGB 域直接改 RGB 通道？
+- 双线性 demosaic 在哪种图案上会产生拉链伪影（zipper）？
+- CCM 应该作用在哪个域？作用在 gamma 之后会发生什么？
 
 ### W3 数据与工具链
 
-**工具**：rawpy/libraw、dcraw、`colour-science`、kornia、OpenCV，MATLAB 可选（做仿真对照）。
+**目标**：一套统一的 Dataset 能读多个数据集、稳定产出 patch，并且知道每个数据集"练什么"。
 
-**数据集**（按体量从小到大上手）：MIT-Adobe FiveK（DNG + 修图 GT，练色调与色彩）→ SID（低光 RAW，5094 对）→ Zurich RAW-to-RGB（ZRR，手机 RAW + 单反 GT，RAW-to-RGB 的主战场）→ Mobile AI 2022 UltraISP（IMX586 四合一，大规模）→ SIDD/DND（真实降噪）。
+**任务清单**（约 18h）：
 
-**动手**：写一套统一的 Dataset——uint16 存盘、patch 随机裁剪、flip/rot 时保持 CFA 相位一致（**这是 RAW 数据增强最容易踩的坑**），并用 LMDB/WebDataset 加速。
+- 工具（2h）：rawpy/libraw、dcraw、`colour-science`、kornia、OpenCV 装好，MATLAB 可选（做仿真对照）。确认能看到 dcraw 的文档模式与 16 位线性输出（`-D -4 -T`）。
+- 数据集（4h）：按体量从小到大过一遍，先选定 1–2 个动手——MIT-Adobe FiveK（DNG + 修图 GT，练色调与色彩）→ SID（低光 RAW，5094 对）→ Zurich RAW-to-RGB（ZRR，手机 RAW + 单反 GT，RAW-to-RGB 的主战场）→ Mobile AI 2022 UltraISP（IMX586 四合一，大规模）→ SIDD/DND（真实降噪）。
+- 写 Dataset（8h）：uint16 存盘、`(raw - black) / (white - black)` 按通道归一化、patch 随机裁剪、flip/rot **保持 CFA 相位一致**（这是 RAW 数据增强最容易踩的坑）。
+- 缓存与测试（4h）：用 LMDB/WebDataset 把预处理结果缓存下来，避免每个 epoch 重解码 DNG；再写一个单元测试——拿已知的 2×2 图案做翻转/旋转，断言相位没跑。
 
-### W4 评测体系 + 第一个小项目
+**产出**：`RawPairDataset` 类 + 缓存脚本 + 一个能过 CI 的相位测试。
 
-**内容**：PSNR/SSIM（保真）、LPIPS（感知）、ΔE2000（色彩）、MTF/SFR（锐度）、噪声 σ、无参考 NIQE；核心认知是「像素指标好 ≠ 观感好」。
+**自测**：
 
-**项目 1**：手写 ISP 并与 libraw 对齐，输出对比图与指标表，写成一篇技术笔记。
+- 对 Bayer 图做一次上下翻转，CFA 排布变成什么？不处理会看到什么颜色错误？
+- 为什么按通道归一化，而不是全局减去一个黑电平？
+- 缓存成 LMDB 相比每次读 DNG，快在哪一步？
+
+### W4 评测体系 + 项目 1
+
+**目标**：一套可复用的评测脚本，以及「手写 ISP 与 libraw 对齐」的报告。
+
+**任务清单**（约 18h）：
+
+- 实现指标（6h）：PSNR/SSIM（保真）、LPIPS（感知）、ΔE2000（色彩，用 `colour-science` 的实现）、MTF/SFR（斜边法可以先自算一个简化版）、噪声 σ、无参考 NIQE。核心认知是「像素指标好 ≠ 观感好」。
+- 写 `evaluate.py`（4h）：输入「预测目录 + GT 目录」，输出指标表（CSV）+ 拼图对比。
+- 项目 1（6h）：用 W2 的 mini-ISP 处理同一批 RAW，与 `rawpy.postprocess()` 对齐参数后比较，出对比图和指标表。
+- 写笔记（2h）：差异到底来自哪几个模块（demosaic、色调曲线、降噪），逐条给出证据。
+
+**产出**：`evaluate.py` + 项目 1 报告 + 一篇技术笔记。
+
+**自测**：
+
+- 举一个「PSNR 高但观感明显差」的场景。
+- 什么情况下 ΔE2000 比 PSNR 更能说明问题？
+- 为什么必须固定 GT 的 gamma 与色调映射策略，指标才有比较意义？
 
 ## 三、第 2 个月（W5–W8）：深度学习 RAW-to-RGB 主力训练
 
 ### W5 精读经典，建立方法地图
 
-**必读**：DeepISP（TIP 2019，端到端开山）、HDRNet（局部色调映射 + 引导滤波）、ISP-Net / PyNet、综述 *ISP meets Deep Learning: A Survey on Deep Learning Methods for Image Signal Processing*（arXiv 2305.11994）、ICCV 2023 Tutorial《Understanding the In-Camera Rendering Pipeline and the role of AI/Deep Learning》。
+**目标**：能画出一张方法地图，说清三种范式各自的收益与代价。
 
-**要能讲清三种范式的差异与取舍**：
+**任务清单**（约 15h）：
 
-- **模块化替换**：逐个模块上网络，可解释、易调参；
-- **联合优化**：模块之间可微串联；
-- **端到端**：RAW→sRGB 一把梭，效果上限高，但难调、难解释。
+- 精读（10h）：DeepISP（TIP 2019，端到端开山）、HDRNet（局部色调映射 + 引导滤波）、ISP-Net / PyNet，以及综述 *ISP meets Deep Learning: A Survey on Deep Learning Methods for Image Signal Processing*（arXiv 2305.11994）。每篇写一页摘要：问题、输入输出、结构、损失、数据、结果、局限。
+- 看教程（3h）：ICCV 2023 Tutorial《Understanding the In-Camera Rendering Pipeline and the role of AI/Deep Learning》。
+- 整理（2h）：做一张二维表——**模块化替换**（逐个模块上网络，可解释、易调参）、**联合优化**（模块间可微串联）、**端到端**（RAW→sRGB 一把梭，上限高但难调、难解释），每种范式填上代表工作、优点、代价、适用场景。
+
+**产出**：一页范文的方法摘要集 + 一张方法地图。
+
+**自测**：
+
+- 端到端方案为什么难调？出问题时你打算怎么定位？
+- 模块化替换在什么场景下反而比端到端更划算？
+- HDRNet 用引导滤波省掉了什么？
 
 ### W6 复现第一个 baseline
 
-在 ZRR 或 MAI2022 上跑通一个 U-Net / NAFNet 类 baseline：输入 Bayer 4 通道（按相位拆分）或 1→3 通道，输出 sRGB。
+**目标**：在公开数据集上跑通一个 baseline，拿到可复现的指标和训练日志。
 
-**训练要点**：
+**任务清单**（约 20h）：
 
-- 线性域归一化 `(raw - black) / (white - black)`，按通道做；
-- 用 log / 分段编码处理高动态范围；
-- 损失用 L1 + 感知（VGG/LPIPS）+ 色度损失；
-- bf16 混合精度、EMA、余弦退火。
+- 数据（4h）：在 ZRR 或 MAI2022（先用小规模子集）上把 W3 的 Dataset 接通。
+- 建模（4h）：搭一个 U-Net / NAFNet 类结构，输入 Bayer 4 通道（按相位拆分）或 1→3 通道，输出 sRGB。
+- 训练配方（8h）：线性域归一化 `(raw - black) / (white - black)` 按通道；log 或分段编码处理高动态；损失用 L1 + 感知（VGG/LPIPS）+ 色度损失；bf16 混合精度、EMA、余弦退火。
+- 性能与显存（4h）：512×512 patch、batch 8–16、约 20–40M 参数可以稳定跑满 4090；1024×1024 需要 batch 2–4 加 gradient checkpointing。打开 `torch.compile` 与 channels_last 各测一遍提速幅度。64G 内存足够做预取，但**务必 patch 化，不要整图进内存**。
 
-**4090 显存参考**：512×512 patch、batch 8–16、约 20–40M 参数可以稳定跑满；1024×1024 需要 batch 2–4 加 gradient checkpointing；打开 `torch.compile` 与 channels_last 提速。64G 内存足够做预取，但务必 patch 化，不要整图进内存。
+**产出**：可复现的训练脚本 + 训练日志 + baseline 指标（进 W8 的消融表）。
+
+**自测**：
+
+- 为什么把 Bayer 按相位拆成 4 通道，比直接当 1 通道输入更合理？
+- `torch.compile` 和 channels_last 在你这个尺寸下各带来多少？
+- 感知损失权重调大之后，PSNR 会怎么变？为什么？
 
 ### W7 数据侧的深水区
 
-这一块是拉开差距的地方。
+**目标**：能把「数据质量」这件事量化——噪声合成、逆 ISP、对齐，各有一个可对照的实验。
 
-- **噪声建模**：Poisson-Gaussian 传感器噪声模型，按 ISO/增益分档合成噪声（ELD 的思路）。
-- **逆 ISP / unprocessing**：从 sRGB 反推 RAW（RAW-Adapter 的 unprocess 流程、ParamISP 用 EXIF 相机参数控制正/逆 ISP），用来缓解 RAW 配对数据稀缺。
-- **对齐问题**：手机 RAW 与单反 GT 之间存在视差、色彩差异和快门时序差异，直接上 L1 监督会糊；了解光流 warp、全局颜色映射（GCM）等解法。
+**任务清单**（约 18h）：
 
-### W8 3A 与画质调优
+- 噪声建模（6h）：实现 Poisson-Gaussian 传感器噪声模型，按 ISO/增益分档拟合参数（ELD 的思路），对比「合成噪声数据训练」与「真实数据训练」的差距。
+- 逆 ISP / unprocess（6h）：从 sRGB 反推 RAW——逆色调曲线 → 逆 CCM → 马赛克化 → 加噪。参考 RAW-Adapter 的 unprocess 流程、ParamISP 用 EXIF 相机参数控制正/逆 ISP 的做法，用来缓解 RAW 配对数据稀缺。
+- 对齐（6h）：手机 RAW 与单反 GT 之间存在视差、色彩差异和快门时序差异，直接上 L1 监督会糊。试光流 warp 与全局颜色映射（GCM），对比「直接 L1」与「对齐后 L1」的指标和观感差异。
 
-AI-ISP 岗位的必考项。
+**产出**：噪声合成脚本 + unprocess 流程 + 一组对齐前后对比。
 
-- **AE**：测光分区统计、目标亮度、收敛与防闪烁（曝光时间取工频整数倍）、AE 与增益分配（先曝光后增益，以保 SNR）。
-- **AWB**：灰度世界、完美反射、动态阈值、白点检测与色温估计，以及 AI AWB。
-- **AF**：反差检测（高频评价值 + 爬山搜索）与相位检测（PDAF 离焦量）、追焦与预测。
-- **调优流程**：色卡（ColorChecker）+ 分辨率卡（SFRplus）+ 灰阶卡，客观指标配主观评审；理解「参数配置文件下发到板端」的工程形态。
+**自测**：
 
-**项目 2**：训练一个 RAW-to-sRGB 模型并做消融实验报告——损失、归一化、patch 尺寸、噪声建模各一组对比。
+- 用 unprocess 造出来的 RAW 训练，评估时为什么不能沿用 sRGB 域的 PSNR？
+- GCM 解决的是哪一类误差？它能修视差吗？
+- 合成噪声和真实噪声训练出的模型，在暗部表现差在哪？
+
+### W8 3A 与画质调优 + 项目 2
+
+**目标**：3A 各能讲出原理和一个可跑的实现；交付项目 2 的消融报告。
+
+**任务清单**（约 20h）：
+
+- AE（5h）：测光分区统计、目标亮度、收敛与防闪烁（曝光时间取工频整数倍）、AE 与增益分配（先曝光后增益，以保 SNR）。
+- AWB（4h）：灰度世界、完美反射、动态阈值、白点检测与色温估计，以及 AI AWB 的思路差异。
+- AF（3h）：反差检测（高频评价值 + 爬山搜索）与相位检测（PDAF 离焦量）、追焦与预测。用合成的高频评价值曲线把爬山搜索跑通。
+- 调优流程（3h）：色卡（ColorChecker）+ 分辨率卡（SFRplus）+ 灰阶卡，客观指标配主观评审；理解「参数配置文件下发到板端」的工程形态。
+- 项目 2（5h）：训练一个 RAW-to-sRGB 模型并做消融实验——损失、归一化、patch 尺寸、噪声建模各一组对比，整理成报告。
+
+**产出**：项目 2 消融报告（表 + 结论）+ 3A 的可运行小实现。
+
+**自测**：
+
+- 为什么「先曝光后增益」？反过来会损失什么？
+- PDAF 的离焦量怎么换算成马达步数？
+- 你的消融实验里，哪一项改动带来最大收益？为什么是它？
 
 ## 四、第 3 个月（W9–W12）：进阶专题 + 端侧工程化 + 作品集
 
@@ -110,29 +193,82 @@ AI-ISP 岗位的必考项。
 
 真实产品的主战场。
 
-**内容**：MFNR 多帧降噪、HDR 多帧合成（对齐 → 权重融合 → 色调映射）、时域 3DNR 与运动检测、光流/可变形对齐、ZSL 零快门延迟流程。
+**目标**：能做出 3–5 帧合成 demo，并解释它相对单帧的收益从哪来。
 
-**数据集/参考**：DRV、SMOID。动手做 3–5 帧合成 demo，与单帧对比。
+**任务清单**（约 18h）：
+
+- 多帧降噪（6h）：MFNR 流程——帧间对齐（先用块匹配或 ECC，再上光流）→ 按噪声方差加权融合 → 输出；与单帧做低光对比。
+- HDR 多帧（5h）：HDR 合成（对齐 → 权重融合 → 色调映射），注意不同曝光帧的权重设计与鬼影处理。
+- 时域（4h）：时域 3DNR 与运动检测（帧差阈值），理解它与多帧降噪的区别。
+- 概念梳理（3h）：ZSL 零快门延迟流程。数据集/参考：DRV、SMOID。
+
+**产出**：3–5 帧合成 demo + 单帧/多帧对比（指标 + 图）。
+
+**自测**：
+
+- 融合权重为什么按噪声方差而不是简单平均？
+- ghosting 通常从哪来？你的 demo 里出现过吗？
+- ZSL 牺牲了什么换来「按下即拍」？
 
 ### W10 前沿方向
 
 **选 1–2 个深挖，不要贪多。**
 
-- **生成式**：DarkDiff（Apple + Purdue，把预训练 Stable Diffusion 改用于暗光 RAW 增强，用区域化交叉注意力防幻觉）、ExposureDiffusion。要理解「回归导致过平滑」与「生成导致幻觉」之间的权衡。
-- **高效结构**：LW-ISP（异构蒸馏）、unrolled optimization（参数量降 30 倍以上）、FourierISP（频域解耦风格与结构）、RMFA-Net（隐式黑电平 + 三通道拆分 + Retinex 色调映射）。
-- **跨设备**：camera-to-camera transfer、RAW 域风格迁移，让一个模型服务多颗 sensor。
+**目标**：在一个方向上复现出核心结论，并能说出它的失效场景。
+
+**任务清单**（约 15h）：
+
+- 选题 + 精读（3h）：从下面三组里挑 1–2 个，把论文整理成「输入输出 / 核心机制 / 训练方式 / 代价」四栏：
+  - 生成式：DarkDiff（Apple + Purdue，把预训练 Stable Diffusion 改用于暗光 RAW 增强，用区域化交叉注意力防幻觉）、ExposureDiffusion。要理解「回归导致过平滑」与「生成导致幻觉」之间的权衡。
+  - 高效结构：LW-ISP（异构蒸馏）、unrolled optimization（参数量降 30 倍以上）、FourierISP（频域解耦风格与结构）、RMFA-Net（隐式黑电平 + 三通道拆分 + Retinex 色调映射）。
+  - 跨设备：camera-to-camera transfer、RAW 域风格迁移，让一个模型服务多颗 sensor。
+- 复现（9h）：把选中的方向跑通官方或复现仓库，在一个小场景上复现核心结论（例如用生成式方法对比回归方法在暗部的细节保留）。
+- 整理（3h）：写笔记，重点写「**为什么它有效**」和「**它在什么情况下会失败**」。
+
+**产出**：一篇有自己实验的专题笔记。
+
+**自测**：
+
+- 生成式方法在什么场景下会产出「看起来很棒但不对」的细节？
+- 你的方向相比 baseline，代价在哪（参数量 / 延迟 / 数据需求）？
 
 ### W11 模型压缩与部署
 
-剪枝/蒸馏/低秩 → PTQ 与 QAT（RAW 域动态范围大，量化要按通道或分组做，注意黑电平与高光截断）→ ONNX 导出（onnxsim 简化、Netron 看图）→ TensorRT INT8/FP16 在 4090 上跑吞吐与延迟；同时了解移动端 NPU 工具链（高通 SNPE/Hexagon、联发科 NeuroPilot、瑞芯微 RKNN）的算子限制与常见 fallback。
+**目标**：拿到一张延迟 / 内存 / 精度三维权衡表。
 
-**产出**：一张延迟/内存/精度三维权衡表——面试里这东西最能体现工程能力。
+**任务清单**（约 18h）：
+
+- 剪枝/蒸馏/低秩（4h）：先做最简单的通道剪枝或知识蒸馏，留一版对照。
+- 量化（6h）：PTQ 与 QAT——RAW 域动态范围大，量化要按通道或分组做，注意黑电平与高光截断；掉点明显时再上 QAT。
+- 导出（3h）：ONNX 导出（onnxsim 简化、Netron 看图），确认算子都被支持。
+- 部署（3h）：TensorRT INT8/FP16 在 4090 上跑吞吐与延迟，逐档记录；同时了解移动端 NPU 工具链（高通 SNPE/Hexagon、联发科 NeuroPilot、瑞芯微 RKNN）的算子限制与常见 fallback。
+- 整理（2h）：三维权衡表——**延迟 / 内存 / 精度**，面试里这东西最能体现工程能力。
+
+**产出**：延迟/内存/精度权衡表 + 各档的 TensorRT 引擎与 benchmark 命令。
+
+**自测**：
+
+- 为什么 RAW 域量化比 sRGB 域更难？
+- INT8 掉点最常见的原因是什么？你怎么定位是量化还是模型本身的问题？
+- 移动端 NPU 上最容易 fallback 到 CPU 的算子是哪类？
 
 ### W12 综合项目与输出
 
-**项目 3（作品集核心）**：「一颗 sensor 的完整 AI-ISP 方案」——自采或公开 RAW → 传统 ISP 基线 → 深度模型（含噪声建模与数据增强）→ 压缩量化 → TensorRT 部署 → 完整评测报告（PSNR/SSIM/LPIPS/ΔE/延迟/内存）+ 对比图。
+**目标**：交付作品集核心项目，端到端跑完一颗 sensor。
 
-**同步输出**：GitHub 仓库（README 写清复现步骤与指标）、2–3 篇技术博客；可选参加 Mobile AI / AIM Challenge 类赛事刷榜。
+**任务清单**（约 20h）：
+
+- 项目 3（14h）：「一颗 sensor 的完整 AI-ISP 方案」——自采或公开 RAW → 传统 ISP 基线 → 深度模型（含噪声建模与数据增强）→ 压缩量化 → TensorRT 部署 → 完整评测报告（PSNR/SSIM/LPIPS/ΔE/延迟/内存）+ 对比图。
+- 文档（4h）：GitHub 仓库，README 写清复现步骤与指标（别人能照着跑起来才算数）。
+- 输出（2h）：2–3 篇技术博客；可选参加 Mobile AI / AIM Challenge 类赛事刷榜。
+
+**产出**：作品集项目 + 仓库 + 博客。
+
+**自测**：
+
+- 换一颗新 sensor，你要重新标定哪些东西？哪些环节可以复用？
+- 从 RAW 到部署完成，你的链路里哪一步最脆弱？
+- 如果指标比 baseline 低 0.3dB，你能从链路里指出三个可能的原因吗？
 
 ## 五、几个高频坑
 
