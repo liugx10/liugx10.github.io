@@ -44,6 +44,9 @@ author:
     - label: "GitHub"
       icon: "fab fa-fw fa-github"
       url: "https://github.com/liugx10"
+    - label: "个人主页"
+      icon: "fas fa-fw fa-home"
+      url: "https://liugx10.github.io"
 
 footer:
   links:

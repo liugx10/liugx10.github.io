@@ -265,6 +265,9 @@ author:
     - label: "GitHub"
       icon: "fab fa-fw fa-github"
       url: "https://github.com/liugx10"
+    - label: "个人主页"
+      icon: "fas fa-fw fa-home"
+      url: "https://liugx10.github.io"
 ```
 
 | 字段 | 说明 |
@@ -272,7 +275,7 @@ author:
 | `name` | 显示在侧栏，链到网站首页。 |
 | `avatar` | 被裁成圆形、最大 **110px**（CSS 里 `.author__avatar img` 的 `max-width`，还带 5px 内边距和 1px 边框）。所以图要用**正方形、边长至少 220px**，否则糊。换头像直接替换同名文件。 |
 | `bio` | 简介。 |
-| `links` | 社交链接列表，`icon` 用 Font Awesome 类名。主题模板里留了一段注释示例（`Custom Social Profile Link`），加链接可参照。 |
+| `links` | 社交链接列表，`icon` 用 Font Awesome 类名（主题的 FA 是 CDN 上的 `@latest`，类名请先确认当前版本存在，否则页面上是空白方块）。主题模板里留了一段注释示例（`Custom Social Profile Link`），加链接可参照。邮箱这类写 `url: "mailto:你的地址"` 即可——**但注意加进侧栏等于把地址明文公开在页面 HTML 里**（首页、每篇文章页都有），会被爬虫采集。 |
 
 **谁在哪儿显示**：文章页由 `_config.yml` 的 `defaults` 打开（`author_profile: true`）；**首页不在 `defaults` 的覆盖范围内**（它只覆盖 `_posts` 和 `_pages`），所以在 `index.html` 的 front matter 里单独写了一行。两者漏一个，对应页面的左栏就空着——而主题 CSS 仍会给左栏留出 200px（`.archive`、`.page` 都是 `float: inline-end; width: calc(100% - 200px)`），看到的现象是正文右边空一条。
 
