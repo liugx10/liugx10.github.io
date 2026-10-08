@@ -59,8 +59,8 @@ remote_theme: "mmistakes/minimal-mistakes@4.28.1"
 | `_includes/social-share.html` | 文章页底部的分享按钮（微博 / QQ 空间 / 微信、钉钉、飞书二维码 / 复制链接），覆盖主题自带的 X / Facebook / LinkedIn / Bluesky 版本。详见第六节「改分享按钮」。 |
 | `assets/images/og-default.png` | 分享卡片的默认缩略图（1200×630），由 `_config.yml` 的 `og_image` 指向。目前是**没有文字的占位图**，换图直接替换文件即可。 |
 | `_includes/sidebar-custom.html` | 文章页左栏的推荐块（相关文章 / 最新文章 / 标签）。写在主题官方扩展点上，见第六节「左栏推荐块」。 |
-| `_data/navigation.yml` | 导航数据，顶层键 `main`。文章页左栏的「首页 / 全部标签」来自这里，以后加页头导航也用它。 |
-| `_pages/tag-archive.md` | `/tags/` 标签索引页。 |
+| `_data/navigation.yml` | 导航数据，顶层键 `main`。文章页左栏的「首页 / 分类」来自这里，以后加页头导航也用它。 |
+| `_pages/category-archive.md`、`_pages/tag-archive.md` | `/categories/` 与 `/tags/` 索引页。 |
 | `README.md` | 仓库说明，已排除，不发布。 |
 | `CLAUDE.md`、`JEKYLL_GUIDE.md` | 开发文档，已排除，不发布。 |
 
@@ -303,7 +303,7 @@ author:
 
 三个必须知道的点：
 
-1. **左栏容器不会凭空出现。** 主题的 `sidebar.html` 外层条件是 `page.author_profile or layout.author_profile or page.sidebar`。文章页没有作者卡，所以 `_config.yml` 里 `_posts` 的 defaults 写了 `sidebar: { nav: "main" }` 来打开它——那个 nav 同时就是左栏里的「首页 / 全部标签」。**删掉这一行，整个左栏连同推荐块一起消失。**
+1. **左栏容器不会凭空出现。** 主题的 `sidebar.html` 外层条件是 `page.author_profile or layout.author_profile or page.sidebar`。文章页没有作者卡，所以 `_config.yml` 里 `_posts` 的 defaults 写了 `sidebar: { nav: "main" }` 来打开它——那个 nav 就是左栏顶部的「首页 / 分类」。**删掉这一行，整个左栏连同推荐块一起消失。**
 2. **底部「猜您还喜欢」不是真相关。** 主题 `_layouts/single.html` 传给它的 `posts` 是 `site.related_posts`，而本站没开 `lsi`，Jekyll 的值就退化成**最新 10 篇**——它和左栏「最新文章」是同一批内容，只是形式不同（网格卡片 vs 紧凑列表）。嫌重复就把 `_config.yml` 里 `_posts` 的 `related: true` 改成 `false`。
 3. **标签没有独立网址，这是有意的。** 配置用的是 `tag_archive: {type: liquid}` → 一个 `/tags/` 索引页 + 页内锚点（`/tags/#随笔`）。想要 `/tags/foo/` 那样的独立页面必须用 `jekyll-archives`，而**它不在 GitHub Pages 的插件白名单里**（照着写会导致线上构建失败，已核对 `pages-gem` 的 `dependencies.rb`）。中文标签的锚点是 `id="随笔"`，而链接会被 `relative_url` 编码成 `#%E9%9A%8F%E7%AC%94`——两者等价（浏览器匹配锚点前先解码），线上已确认。
 

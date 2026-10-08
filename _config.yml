@@ -65,10 +65,16 @@ permalink: /:categories/:title/
 paginate: 5
 paginate_path: /page:num/
 
-# 标签归档。type: liquid 表示用主题自带的 Liquid 方案：生成一个 /tags/ 索引页，
-# 每个标签是页内一个锚点（/tags/#随笔）。**不需要插件**——每标签独立网址要
-# jekyll-archives，而它不在 GitHub Pages 的插件白名单里，写了会导致线上构建失败。
-# 索引页本体在 _pages/tag-archive.md。
+# 分类与标签归档。type: liquid = 用主题自带的 Liquid 方案生成索引页，每个分类/标签是
+# 页内一个锚点（/categories/#随笔、/tags/#随笔）。**不需要插件**——每个分类/标签一个
+# 独立网址要 jekyll-archives，而它不在 GitHub Pages 的插件白名单里，写了会导致线上
+# 构建失败。索引页本体在 _pages/category-archive.md 和 _pages/tag-archive.md。
+#
+# 两个块都配上，文章页顶部才会出现对应的「分类:」「标签:」链接行——主题的
+# page__taxonomy.html 是对两者分别判断的，少一个就少一行。
+category_archive:
+  type: liquid
+  path: /categories/
 tag_archive:
   type: liquid
   path: /tags/
