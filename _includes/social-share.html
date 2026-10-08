@@ -31,7 +31,13 @@
 
 {%- comment -%} 主题调用时会传 include.locale，没传就退回站点语言 {%- endcomment -%}
 {%- assign locale = include.locale | default: site.locale -%}
-{%- assign share_url = page.url | absolute_url -%}
+{%- comment -%}
+  page.url 是 Jekyll **已经转义过**的（中文分类会变成 %E9%9A%8F 这种，页面里的
+  canonical / og:url 也是这个形式），所以先 url_decode 还原成可读地址，再按需
+  url_encode。这两个过滤器缺一不可：少了 url_decode，% 会被二次编码成 %25，
+  分享出去和「复制链接」复制到的都是 https://…/%25E9%259A%258F… 这种双层编码。
+{%- endcomment -%}
+{%- assign share_url = page.url | absolute_url | url_decode -%}
 {%- assign share_url_enc = share_url | url_encode -%}
 {%- assign share_title = page.title | default: site.title -%}
 {%- assign share_title_enc = share_title | url_encode -%}
@@ -39,10 +45,10 @@
 {%- assign share_summary_enc = share_summary | url_encode -%}
 {%- assign share_site_enc = site.title | url_encode -%}
 {%- comment -%}
-  share_url_enc 是 Liquid 的 url_encode（Ruby 的 CGI.escape），和下面飞书要的
-  encodeURIComponent 对本站文章地址等价：permalink 是 /:categories/:title/，
-  不带 ! ' ( ) * 这些两者处理不同的字符。若以后网址里出现查询串，飞书那条要按
-  「先编码参数再整体编码」的规则双层编码。
+  share_url_enc 是对上面还原出来的**原始**地址做 url_encode（Ruby 的 CGI.escape），
+  与飞书那条深链要的 encodeURIComponent 对本站文章地址等价：permalink 是
+  /:categories/:title/，不含 ! ' ( ) * 这些两者处理不同的字符。若以后网址里出现
+  查询串，飞书那条要按「先编码参数再整体编码」的规则双层编码。
 {%- endcomment -%}
 
 {%- comment -%}
