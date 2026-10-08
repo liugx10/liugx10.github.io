@@ -65,13 +65,22 @@ permalink: /:categories/:title/
 paginate: 5
 paginate_path: /page:num/
 
+# 分类菜单要展示的**完整**分类清单。Jekyll 的 site.categories 只包含「有文章的分类」，
+# 所以想让还没有文章的分类也显示出来，就得在这里声明。增删分类时同步改这里，
+# 以及 CLAUDE.md / JEKYLL_GUIDE.md 里的分类约定。文章页「分类:」那一行读的就是它
+# （见 _includes/category-list.html，我们覆盖了主题那版）。
+category_list:
+  - 随笔
+  - 技术
+  - 投资
+
 # 分类与标签归档。type: liquid = 用主题自带的 Liquid 方案生成索引页，每个分类/标签是
 # 页内一个锚点（/categories/#随笔、/tags/#随笔）。**不需要插件**——每个分类/标签一个
 # 独立网址要 jekyll-archives，而它不在 GitHub Pages 的插件白名单里，写了会导致线上
 # 构建失败。索引页本体在 _pages/category-archive.md 和 _pages/tag-archive.md。
 #
-# 两个块都配上，文章页顶部才会出现对应的「分类:」「标签:」链接行——主题的
-# page__taxonomy.html 是对两者分别判断的，少一个就少一行。
+# 两个块都配上，文章页「正文之后」才会出现对应的「分类:」「标签:」链接行——主题的
+# page__taxonomy.html 对两者分别判断，少一个就少一行。
 category_archive:
   type: liquid
   path: /categories/

@@ -1,0 +1,35 @@
+{%- comment -%}
+  文章页「分类:」那一行 —— 覆盖主题的同名 include（主题版在 4.28.1 里是 22 行）。
+
+  与主题版唯一的区别：清单来源从 `page.categories`（本篇自己的分类）换成
+  `_config.yml` 的 `category_list`（站点声明的全部分类），这样**还没有文章的分类也一样显示**。
+  Jekyll 的 site.categories 只含"有文章的分类"，主题自己也变不出空分类，所以这一处必须自己写。
+
+  位置：主题的 _layouts/single.html 第 60 行调用它，在 `<footer class="page__meta">` 里，
+  即正文之后、分享按钮之前——不在文章顶部。
+
+  语义处理：只有本篇真正属于的分类带 `p-category` + `rel="tag"`（microformats2 里
+  "这篇文章属于哪些分类"就是这两个属性），其余三个只作为普通链接列出，并给当前分类套
+  `<strong>`（复用主题已有的加粗样式，不新增 CSS）。
+
+  链接写法照抄主题：slugify + '#' + site.category_archive.path（type: liquid → 页内锚点）。
+  空分类今天点过去只会落到 /categories/ 页首（那一页同样只列有文章的分类），
+  等它有了文章，锚点自然生效，不需要改代码。
+{%- endcomment -%}
+{%- assign locale = include.locale | default: site.locale -%}
+{%- if site.category_archive.path -%}
+<p class="page__taxonomy">
+  <strong><i class="fas fa-fw fa-folder-open" aria-hidden="true"></i> {{ site.data.ui-text[locale].categories_label | default: "分类:" }} </strong>
+  <span itemprop="keywords">
+  {%- for category_word in site.category_list -%}
+    {%- assign href = category_word | slugify | prepend: '#' | prepend: site.category_archive.path | relative_url -%}
+    {%- if page.categories contains category_word -%}
+      <strong><a href="{{ href }}" class="page__taxonomy-item p-category" rel="tag">{{ category_word }}</a></strong>
+    {%- else -%}
+      <a href="{{ href }}" class="page__taxonomy-item">{{ category_word }}</a>
+    {%- endif -%}
+    {%- unless forloop.last %}<span class="sep">, </span>{% endunless -%}
+  {%- endfor -%}
+  </span>
+</p>
+{%- endif -%}

@@ -59,6 +59,7 @@ remote_theme: "mmistakes/minimal-mistakes@4.28.1"
 | `_includes/social-share.html` | 文章页底部的分享按钮（微博 / QQ 空间 / 微信、钉钉、飞书二维码 / 复制链接），覆盖主题自带的 X / Facebook / LinkedIn / Bluesky 版本。详见第六节「改分享按钮」。 |
 | `assets/images/og-default.png` | 分享卡片的默认缩略图（1200×630），由 `_config.yml` 的 `og_image` 指向。目前是**没有文字的占位图**，换图直接替换文件即可。 |
 | `_includes/sidebar-custom.html` | 文章页左栏的推荐块（相关文章 / 最新文章 / 标签）。写在主题官方扩展点上，见第六节「左栏推荐块」。 |
+| `_includes/category-list.html` | 文章页「分类:」那一行。**覆盖了主题同名 include**，为了列出全部分类（含还没有文章的）。清单在 `_config.yml` 的 `category_list`。 |
 | `_data/navigation.yml` | 导航数据，顶层键 `main`。文章页左栏的「首页 / 分类」来自这里，以后加页头导航也用它。 |
 | `_pages/category-archive.md`、`_pages/tag-archive.md` | `/categories/` 与 `/tags/` 索引页。 |
 | `README.md` | 仓库说明，已排除，不发布。 |
@@ -73,7 +74,7 @@ Jekyll 靠**目录名**识别用途，新建后自动生效，通常不用改配
 | 路径 | 作用 |
 |---|---|
 | `_layouts/` | 页面模板。Minimal Mistakes 提供 `default`、`home`、`single`、`archive`、`splash` 等（**没有 `post`**）；在这里新建**同名文件**即可覆盖主题的版本。 |
-| `_includes/` | 可复用的 HTML 片段（页头、页脚、`head` 等），同样按文件名覆盖。**已创建**：`social-share.html`（分享按钮）、`sidebar-custom.html`（左栏推荐块）。 |
+| `_includes/` | 可复用的 HTML 片段（页头、页脚、`head` 等），同样按文件名覆盖。**已创建**：`social-share.html`（分享按钮）、`sidebar-custom.html`（左栏推荐块）、`category-list.html`（文章页分类行）。 |
 | `_sass/` | SCSS 片段。覆盖 `_sass/minimal-mistakes/_variables.scss` 可整体调配色和字体。 |
 | `assets/` | 样式表和图片。放图片最常用的目录。**已创建**，目前有 `images/og-default.png`（分享卡片缩略图）和 `images/avatar-default.png`（侧栏头像），两张都是占位图。 |
 | `_pages/` | 独立页面（关于、分类归档等）。已在 `_config.yml` 的 `include` 里声明，放进去就会被构建。**已创建**，目前只有 `tag-archive.md`。 |
@@ -175,7 +176,7 @@ categories: 随笔
 | `layout` | 文章写 `single`。**主题没有 `post` 这个 layout**，写错会构建告警并按无模板渲染。`_config.yml` 的 `defaults` 已经设好，其实可以整行省略。 |
 | `title` | 标题，含空格或中文标点时用引号包起来。 |
 | `date` | 写成 `YYYY-MM-DD` 即可。**必须与文件名一致**。 |
-| `categories` | 分类，本站约定只有三类：**随笔 / 技术 / 投资**。用空格可写多个，但会形成多级网址，而且它出现在网址里（见下），所以别随手加。细粒度关键词用 `tags`。 |
+| `categories` | 分类，本站约定只有三类：**随笔 / 技术 / 投资**。这三类的完整清单写在 `_config.yml` 的 `category_list` 里——文章页那行「分类:」会把三类都列出来（**包括还没有文章的**），所以**增删分类要同步改 `_config.yml`**。用空格可写多个，但会形成多级网址，而且它出现在网址里（见下），所以别随手加。细粒度关键词用 `tags`。 |
 | `tags` | 标签，只做展示。不配置归档页的话，文章顶部不会渲染标签。 |
 | `excerpt` | 手动指定列表页显示的摘要。 |
 | `toc` | 写 `true` 会在文章右侧生成目录。 |
