@@ -58,23 +58,26 @@ remote_theme: "mmistakes/minimal-mistakes@4.28.1"
 | `_data/ui-text.yml` | 主题界面文案的简体中文版（`最新文章`、`下一页`、`目录` 等 47 个键）。**必须存在**，见第一节末尾。想把界面上某个词换掉，改这里。 |
 | `_includes/social-share.html` | 文章页底部的分享按钮（微博 / QQ 空间 / 微信、钉钉、飞书二维码 / 复制链接），覆盖主题自带的 X / Facebook / LinkedIn / Bluesky 版本。详见第六节「改分享按钮」。 |
 | `assets/images/og-default.png` | 分享卡片的默认缩略图（1200×630），由 `_config.yml` 的 `og_image` 指向。目前是**没有文字的占位图**，换图直接替换文件即可。 |
+| `_includes/sidebar-custom.html` | 文章页左栏的推荐块（相关文章 / 最新文章 / 标签）。写在主题官方扩展点上，见第六节「左栏推荐块」。 |
+| `_data/navigation.yml` | 导航数据，顶层键 `main`。文章页左栏的「首页 / 全部标签」来自这里，以后加页头导航也用它。 |
+| `_pages/tag-archive.md` | `/tags/` 标签索引页。 |
 | `README.md` | 仓库说明，已排除，不发布。 |
 | `CLAUDE.md`、`JEKYLL_GUIDE.md` | 开发文档，已排除，不发布。 |
 
 > 首页文件名**必须是 `.html`**。分页插件 `jekyll-paginate` 只把根目录下的 `index.html` 当作分页模板，改名成 `index.md` 后分页会被静默跳过（日志里只有一行 warning，网站上看不出来），超过 `paginate` 数量的文章就再也翻不到了。
 
-### Jekyll 约定目录（目前只建了 `_data/`、`_includes/`、`assets/`，其余需要时自己新建）
+### Jekyll 约定目录（目前只建了 `_data/`、`_includes/`、`assets/`、`_pages/`，其余需要时自己新建）
 
 Jekyll 靠**目录名**识别用途，新建后自动生效，通常不用改配置：
 
 | 路径 | 作用 |
 |---|---|
 | `_layouts/` | 页面模板。Minimal Mistakes 提供 `default`、`home`、`single`、`archive`、`splash` 等（**没有 `post`**）；在这里新建**同名文件**即可覆盖主题的版本。 |
-| `_includes/` | 可复用的 HTML 片段（页头、页脚、`head` 等），同样按文件名覆盖。**已创建**，目前只放了 `social-share.html`。 |
+| `_includes/` | 可复用的 HTML 片段（页头、页脚、`head` 等），同样按文件名覆盖。**已创建**：`social-share.html`（分享按钮）、`sidebar-custom.html`（左栏推荐块）。 |
 | `_sass/` | SCSS 片段。覆盖 `_sass/minimal-mistakes/_variables.scss` 可整体调配色和字体。 |
 | `assets/` | 样式表和图片。放图片最常用的目录。**已创建**，目前有 `images/og-default.png`（分享卡片缩略图）和 `images/avatar-default.png`（侧栏头像），两张都是占位图。 |
-| `_pages/` | 独立页面（关于、分类归档等）。已在 `_config.yml` 的 `include` 里声明，放进去就会被构建。 |
-| `_data/` | YAML 数据文件，已存在（`ui-text.yml`）。再加 `_data/navigation.yml` 可以给页头加导航菜单。 |
+| `_pages/` | 独立页面（关于、分类归档等）。已在 `_config.yml` 的 `include` 里声明，放进去就会被构建。**已创建**，目前只有 `tag-archive.md`。 |
+| `_data/` | YAML 数据文件，已存在：`ui-text.yml`（界面文案）、`navigation.yml`（导航，顶层键 `main`）。 |
 | `_drafts/` | 草稿。文件名**不需要日期**，只有加 `--drafts` 参数预览时才可见，不会发布。 |
 | `_site/` | **构建产物**，已加入 `.gitignore`。不要手工编辑，也不要提交。 |
 
@@ -282,10 +285,29 @@ author:
 
 **谁在哪儿显示：只有首页。** 打开它的是 `index.html` front matter 里的 `author_profile: true`；`defaults` 里**故意不设**这一项，所以文章页和独立页面都没有左栏。因为卡片只在这一处渲染，写进 `links` 的内容（包括邮箱）也就只出现在主页。
 
-**文章页左侧那条空白是刻意留着的，别去"修"它。** 主题 CSS 无条件给左栏留 200px（`.page` 是 `float: inline-end; width: calc(100% - 200px); padding-inline-end: 200px`），文章页没有卡片时它就空着——这块**预留位计划以后放文章推荐之类的侧栏内容**。两点注意：
+**文章页左侧那条 200px 的空白已经用上了**——现在放的是推荐块，见下面「左栏推荐块」。它的宽度是主题 CSS **无条件**预留的（`.page` 是 `float: inline-end; width: calc(100% - 200px); padding-inline-end: 200px`），主题里没有「无左栏就还回空间」的机制，所以**别用 `classes: wide` 去调它**（`wide` 只把 `padding-inline-end` 归零，结果左右不对称）。
 
-- **别用 `classes: wide` 去吃掉它**——`wide` 只把 `padding-inline-end` 归零，左侧照样空，结果是左右不对称。（主题里 `:has()`、`without-sidebar` 之类的机制一个都没有，没有现成的「无左栏」形态。）
-- 真要往里放内容，两条路：**覆盖主题模板**（`_includes/sidebar.html` / `author-profile.html`），能做按文章动态生成的推荐块；或者试 MM 的侧栏 nav 机制（post front matter 里 `sidebar: { nav: "推荐" }` 配 `_data/navigation.yml` 里手写的列表，每篇要各自指定、列表是静态的）——后一条我还没实测过。
+### 左栏推荐块
+
+文章页左栏的三块内容——**相关文章 / 最新文章 / 标签**——写在 **`_includes/sidebar-custom.html`**，这是**主题官方留的扩展点，不是覆盖模板**：
+
+> `_includes/sidebar.html` 的最后一行是 `{% include sidebar-custom.html %}`，而主题里的这个文件是 **0 字节的空文件**。官方文档 `docs/_docs/10-layouts.md` 原话：*"For more advanced customization, create `_includes/sidebar-custom.html` in your site. Its contents are included at the bottom of the sidebar on every page…"*
+
+所以**升级主题时不需要比对任何模板文件**；删掉这个文件即完全恢复原状。
+
+| 块 | 数据来源 |
+|---|---|
+| 相关文章 | 遍历 `site.posts`，取与本篇有共同 `categories` 或 `tags` 的最多 5 条；一条都没有时整块不渲染 |
+| 最新文章 | `site.posts` 里除本篇外的 5 条；没有别的文章时不渲染（不输出空列表） |
+| 标签 | 遍历 `site.tags`，链到 `site.tag_archive.path` + `#` + `slugify(标签)`，后面跟篇数 |
+
+三个必须知道的点：
+
+1. **左栏容器不会凭空出现。** 主题的 `sidebar.html` 外层条件是 `page.author_profile or layout.author_profile or page.sidebar`。文章页没有作者卡，所以 `_config.yml` 里 `_posts` 的 defaults 写了 `sidebar: { nav: "main" }` 来打开它——那个 nav 同时就是左栏里的「首页 / 全部标签」。**删掉这一行，整个左栏连同推荐块一起消失。**
+2. **底部「猜您还喜欢」不是真相关。** 主题 `_layouts/single.html` 传给它的 `posts` 是 `site.related_posts`，而本站没开 `lsi`，Jekyll 的值就退化成**最新 10 篇**——它和左栏「最新文章」是同一批内容，只是形式不同（网格卡片 vs 紧凑列表）。嫌重复就把 `_config.yml` 里 `_posts` 的 `related: true` 改成 `false`。
+3. **标签没有独立网址，这是有意的。** 配置用的是 `tag_archive: {type: liquid}` → 一个 `/tags/` 索引页 + 页内锚点（`/tags/#随笔`）。想要 `/tags/foo/` 那样的独立页面必须用 `jekyll-archives`，而**它不在 GitHub Pages 的插件白名单里**（照着写会导致线上构建失败，已核对 `pages-gem` 的 `dependencies.rb`）。中文标签的锚点是 `id="随笔"`，而链接会被 `relative_url` 编码成 `#%E9%9A%8F%E7%AC%94`——两者等价（浏览器匹配锚点前先解码），线上已确认。
+
+标签索引页本体是 `_pages/tag-archive.md`（`layout: tags` 由主题提供）。文章要写 `tags:` 才会出现在里面——**标签不进网址**（`permalink` 只用 `categories`），所以给已有文章补标签不会让链接 404。
 
 ### 加导航菜单
 
