@@ -1,9 +1,9 @@
 {%- comment -%}
   文章页底部的分享按钮 —— 覆盖 Minimal Mistakes 4.28.1 主题的同名 include。
 
-  为什么要覆盖：主题自带的 social-share.html 输出的是 X / Facebook / LinkedIn，
-  全是国内用不上的。Jekyll 会从 _includes 目录挂载主题文件，仓库里放一份同路径同名的
-  文件就能整体替换掉，不必改主题。
+  为什么要覆盖：主题自带的 social-share.html 输出的是 X / Facebook / LinkedIn /
+  Bluesky，全是国内用不上的。Jekyll 会从 _includes 目录挂载主题文件，仓库里放一份
+  同路径同名的文件就能整体替换掉，不必改主题。
 
   为什么样式和脚本直接写在这里：本仓库没有本地构建，推送到 GitHub Pages 之前无法预览，
   所以不依赖 _includes/head/custom.html 之类的挂载点（万一那个挂载点没生效，样式会
@@ -57,7 +57,7 @@
   也会长出分享按钮。defaults 只给 _posts 设了 share: true。
 {%- endcomment -%}
 {%- if page.share -%}
-<div class="mm-share">
+<section class="mm-share">
   <h4 class="mm-share__title">{{ site.data.ui-text[locale].share_on_label | default: "分享" }}</h4>
 
   <ul class="mm-share__list">
@@ -105,14 +105,12 @@
       <button type="button" class="mm-share__btn mm-share__btn--copy" data-mm-share-url="{{ share_url }}">复制链接</button>
     </li>
   </ul>
-</div>
+</section>
 
 <style>
   /* 所有选择器都带上 .mm-share 作用域：Markdown 会按 .page__content 那一套给
      ul / li / a / h4 套样式，作用域能保证特异性压过主题，不然按钮行会冒出圆点和缩进。 */
   .mm-share { margin-top: 2em; }
-  /* 若主题的 single.html 已经用 .page__share 包了一层（自带 margin-top），避免叠加 */
-  .page__share .mm-share { margin-top: 0; }
 
   .mm-share .mm-share__title { margin: 0 0 .6em; font-size: .875em; text-transform: uppercase; letter-spacing: .04em; }
 

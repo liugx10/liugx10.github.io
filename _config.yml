@@ -25,6 +25,14 @@ url: "https://liugx10.github.io"   # 分享按钮、feed、绝对链接都要用
 repository: "liugx10/liugx10.github.io"
 date_format: "%Y 年 %-m 月 %-d 日"  # 文章日期格式（strftime，% 后加减号表示去掉前导零）
 
+# 时区。**必须设**：线上构建按 UTC 跑（页面的 article:published_time 会显示 +00:00），
+# 不设这一项，北京时间 0:00–8:00 推送的「当天」文章会被当成未来时间而静默不发布。
+timezone: "Asia/Shanghai"
+
+# 分享卡片的默认缩略图（微信 / 钉钉 / 飞书 / 微博抓的是 og:image）。文章可用自己
+# front matter 里的 og_image 覆盖。换图直接替换 assets/images/ 下这个文件即可。
+og_image: "/assets/images/og-default.png"
+
 # 作者资料卡：显示在文章页左侧栏
 author:
   name: "Liu Guoxuan"

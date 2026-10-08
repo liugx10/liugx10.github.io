@@ -56,13 +56,14 @@ remote_theme: "mmistakes/minimal-mistakes@4.28.1"
 | `index.html` | 首页。使用主题的 `layout: home`，会自动列出 `_posts/` 里的文章。 |
 | `_posts/` | 博客文章，一篇一个文件。 |
 | `_data/ui-text.yml` | 主题界面文案的简体中文版（`最新文章`、`下一页`、`目录` 等 47 个键）。**必须存在**，见第一节末尾。想把界面上某个词换掉，改这里。 |
-| `_includes/social-share.html` | 文章页底部的分享按钮（微博 / QQ 空间 / 微信、钉钉、飞书二维码 / 复制链接），覆盖主题自带的 X / Facebook / LinkedIn 版本。详见第六节「改分享按钮」。 |
+| `_includes/social-share.html` | 文章页底部的分享按钮（微博 / QQ 空间 / 微信、钉钉、飞书二维码 / 复制链接），覆盖主题自带的 X / Facebook / LinkedIn / Bluesky 版本。详见第六节「改分享按钮」。 |
+| `assets/images/og-default.png` | 分享卡片的默认缩略图（1200×630），由 `_config.yml` 的 `og_image` 指向。目前是**没有文字的占位图**，换图直接替换文件即可。 |
 | `README.md` | 仓库说明，已排除，不发布。 |
 | `CLAUDE.md`、`JEKYLL_GUIDE.md` | 开发文档，已排除，不发布。 |
 
 > 首页文件名**必须是 `.html`**。分页插件 `jekyll-paginate` 只把根目录下的 `index.html` 当作分页模板，改名成 `index.md` 后分页会被静默跳过（日志里只有一行 warning，网站上看不出来），超过 `paginate` 数量的文章就再也翻不到了。
 
-### Jekyll 约定目录（目前只建了 `_data/` 和 `_includes/`，其余需要时自己新建）
+### Jekyll 约定目录（目前只建了 `_data/`、`_includes/`、`assets/`，其余需要时自己新建）
 
 Jekyll 靠**目录名**识别用途，新建后自动生效，通常不用改配置：
 
@@ -71,7 +72,7 @@ Jekyll 靠**目录名**识别用途，新建后自动生效，通常不用改配
 | `_layouts/` | 页面模板。Minimal Mistakes 提供 `default`、`home`、`single`、`archive`、`splash` 等（**没有 `post`**）；在这里新建**同名文件**即可覆盖主题的版本。 |
 | `_includes/` | 可复用的 HTML 片段（页头、页脚、`head` 等），同样按文件名覆盖。**已创建**，目前只放了 `social-share.html`。 |
 | `_sass/` | SCSS 片段。覆盖 `_sass/minimal-mistakes/_variables.scss` 可整体调配色和字体。 |
-| `assets/` | 样式表和图片。放图片最常用的目录。 |
+| `assets/` | 样式表和图片。放图片最常用的目录。**已创建**，目前只有 `images/og-default.png`。 |
 | `_pages/` | 独立页面（关于、分类归档等）。已在 `_config.yml` 的 `include` 里声明，放进去就会被构建。 |
 | `_data/` | YAML 数据文件，已存在（`ui-text.yml`）。再加 `_data/navigation.yml` 可以给页头加导航菜单。 |
 | `_drafts/` | 草稿。文件名**不需要日期**，只有加 `--drafts` 参数预览时才可见，不会发布。 |
@@ -179,7 +180,7 @@ categories: 随笔
 
 几个容易踩的坑：
 
-- **日期不能是未来时间。** 比如今天是 9 月 23 日，写成 `date: 2026-09-25` 的文章不会被构建，网站上完全看不到。
+- **日期不能是未来时间。** 比如今天是 9 月 23 日，写成 `date: 2026-09-25` 的文章不会被构建，网站上完全看不到。线上构建按 **UTC** 计时，靠 `_config.yml` 里的 `timezone: "Asia/Shanghai"` 校正——**这行必须留着**，否则北京时间 0:00–8:00 推送的「当天」文章会被当成未来时间，页面上看不到、也不会有任何报错。
 - **分类和文件名都会影响网址。** `_config.yml` 里配置的是 `permalink: /:categories/:title/`，所以 `_posts/2026-09-23-my-first-post.md` 配合 `categories: 随笔` 最终网址是 `/随笔/my-first-post/`（中文在浏览器里会显示成转义形式）。**修改已有文章的分类或改文件名，等于换了网址，原来的链接会 404。**
 - **文章日期显示的格式**由 `_config.yml` 的 `date_format` 控制，当前是 `%Y 年 %-m 月 %-d 日`。
 - 首页不需要手动维护列表，`index.html` 的 `layout: home` 会自动列出所有文章（每页 `paginate` 篇）。
@@ -244,6 +245,8 @@ minimal_mistakes_skin: "default"
 | 复制链接 | 十几行内联脚本，优先用 `navigator.clipboard`，本地 http 预览时退回 `execCommand` |
 
 三个二维码内容相同（都是本页地址），只是提示文字不同；都由第三方接口 `api.qrserver.com` 现画现给，换服务商只改文件顶部 `qr_api` 那一行。钉钉和飞书那两条深链是**兜底**：桌面装了对应客户端才能唤起（钉钉还会开在 PC 侧边栏），没装的话点了没有任何反应，所以主入口始终是二维码。
+
+分享出去的**卡片**（标题、描述、缩略图）不归这个文件管——那是主题的 `seo.html` 从 front matter 和 `_config.yml` 生成的：缩略图取 `_config.yml` 的 `og_image`（当前指向 `assets/images/og-default.png`，一张没有文字的占位图），单篇文章可以用 front matter 里的 `og_image` 覆盖；描述取 `description`，没写则用正文首段（`excerpt`）。**不设 `og_image` 的话，分享到微信/钉钉/飞书的卡片就没有缩略图。**
 
 两个刻意的决定：**样式和脚本都内联在这个文件里**，不依赖 `_includes/head/custom.html` 之类的挂载点——本仓库没有本地构建，挂载点没生效的话样式会静默丢失且不报错；配色按 default 皮肤写死成浅色，将来换成 `dark` 等深色皮肤时要同步改 `.mm-share__popover` 的 `background` / `border` / `color`。
 
@@ -318,7 +321,7 @@ git push origin main
 
 | 现象 | 原因与处理 |
 |---|---|
-| 本地能看到文章，线上没有 | 文章 `date` 是未来时间；或文件没推送上去（`git status` 确认）。 |
+| 本地能看到文章，线上没有 | 文章 `date` 是未来时间（线上按 UTC 算，靠 `timezone: Asia/Shanghai` 校正，见第五节）；或文件没推送上去（`git status` 确认）。 |
 | 改了 `_config.yml` 没变化 | 配置改动需要重启本地服务。 |
 | 新文章不出现在首页 | 文件名日期格式不对（必须是 `YYYY-MM-DD-`）。 |
 | 构建报 `Unknown tag 'include_cached'` | `_config.yml` 的 `plugins:` 里少了 `jekyll-include-cache`。 |
