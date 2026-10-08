@@ -282,7 +282,10 @@ author:
 
 **谁在哪儿显示：只有首页。** 打开它的是 `index.html` front matter 里的 `author_profile: true`；`defaults` 里**故意不设**这一项，所以文章页和独立页面都没有左栏。因为卡片只在这一处渲染，写进 `links` 的内容（包括邮箱）也就只出现在主页。
 
-**一个已知副作用（属正常，不是 bug）**：主题 CSS 是**无条件**给左栏留 200px 的（`.page` 是 `float: inline-end; width: calc(100% - 200px); padding-inline-end: 200px`），所以文章页没有卡片时，**正文宽度不变、左右各空 200px**，观感是正文变成居中的窄栏。**别用 `classes: wide` 去修**——它只把 `padding-inline-end` 归零，结果反而左右不对称（主题里 `:has()`、`without-sidebar` 之类的机制一个都没有，没有现成的"无左栏"形态）。真想改就用自定义样式覆盖 `.page` 的宽度。
+**文章页左侧那条空白是刻意留着的，别去"修"它。** 主题 CSS 无条件给左栏留 200px（`.page` 是 `float: inline-end; width: calc(100% - 200px); padding-inline-end: 200px`），文章页没有卡片时它就空着——这块**预留位计划以后放文章推荐之类的侧栏内容**。两点注意：
+
+- **别用 `classes: wide` 去吃掉它**——`wide` 只把 `padding-inline-end` 归零，左侧照样空，结果是左右不对称。（主题里 `:has()`、`without-sidebar` 之类的机制一个都没有，没有现成的「无左栏」形态。）
+- 真要往里放内容，两条路：**覆盖主题模板**（`_includes/sidebar.html` / `author-profile.html`），能做按文章动态生成的推荐块；或者试 MM 的侧栏 nav 机制（post front matter 里 `sidebar: { nav: "推荐" }` 配 `_data/navigation.yml` 里手写的列表，每篇要各自指定、列表是静态的）——后一条我还没实测过。
 
 ### 加导航菜单
 
