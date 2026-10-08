@@ -1,0 +1,70 @@
+{%- comment -%}
+  文章页左栏的推荐内容 —— 写在主题官方指定的扩展点上，**不覆盖任何主题模板**。
+
+  _includes/sidebar.html 的最后一行是无条件的 `{% include sidebar-custom.html %}`，
+  而主题里的 sidebar-custom.html 是个 0 字节的空文件；官方文档（docs/_docs/10-layouts.md）
+  明说它就是给使用者往侧栏底部塞自定义内容用的。所以这里是主题留的口子，不是绕路。
+
+  三块内容：相关文章（按当前文章的分类/标签算）、最新文章、标签。
+
+  两个前提，破坏任何一个这里就整块不渲染：
+  1. 侧栏容器只在 `page.author_profile or layout.author_profile or page.sidebar` 为真时
+     才存在（见主题 sidebar.html 的外层条件）。文章页已没有作者卡，靠 _config.yml 里
+     _posts defaults 的 `sidebar: { nav: "main" }` 把它打开；那个 nav 同时是「全部标签」的入口。
+  2. 标签块依赖 _config.yml 的 `tag_archive`；链接形式照抄主题 _includes/tag-list.html
+     （type: liquid 时是 /tags/#锚点）。
+
+  不新增 CSS：标题用主题的 .nav__title、列表用 .nav__items，字号和颜色由 .sidebar 那套规则继承。
+{%- endcomment -%}
+
+{%- if page.layout != "home" -%}
+{%- assign locale = site.locale -%}
+
+{%- comment -%}
+  others = 除当前文章以外的全部文章，下面两块都用它。
+  用 where_exp 先把自己滤掉，避免依赖 Liquid 4 才有的 continue / break。
+{%- endcomment -%}
+{%- assign others = site.posts | where_exp: "post", "post.url != page.url" -%}
+
+{%- comment -%} 相关文章：与本篇共享至少一个 category 或 tag，最多 5 条 {%- endcomment -%}
+{%- assign related = "" | split: "" -%}
+{%- for post in others -%}
+  {%- assign shared = false -%}
+  {%- for cat in post.categories -%}
+    {%- if page.categories contains cat -%}{%- assign shared = true -%}{%- endif -%}
+  {%- endfor -%}
+  {%- for tag in post.tags -%}
+    {%- if page.tags contains tag -%}{%- assign shared = true -%}{%- endif -%}
+  {%- endfor -%}
+  {%- if shared -%}{%- assign related = related | push: post -%}{%- endif -%}
+{%- endfor -%}
+
+{%- if related.size > 0 -%}
+<h4 class="nav__title">相关文章</h4>
+<ul class="nav__items">
+  {%- for post in related limit: 5 -%}
+  <li><a href="{{ post.url | relative_url }}">{{ post.title }}</a></li>
+  {%- endfor -%}
+</ul>
+{%- endif -%}
+
+{%- comment -%} 只有一篇文章时 others 为空，不渲染空列表 {%- endcomment -%}
+{%- if others.size > 0 -%}
+<h4 class="nav__title">{{ site.data.ui-text[locale].recent_posts | default: "最新文章" }}</h4>
+<ul class="nav__items">
+  {%- for post in others limit: 5 -%}
+  <li><a href="{{ post.url | relative_url }}">{{ post.title }}</a></li>
+  {%- endfor -%}
+</ul>
+{%- endif -%}
+
+{%- if site.tag_archive.type and site.tags.size > 0 -%}
+<h4 class="nav__title">标签</h4>
+<ul class="nav__items">
+  {%- for tag in site.tags -%}
+  <li><a href="{{ tag[0] | slugify | prepend: '#' | prepend: site.tag_archive.path | relative_url }}">{{ tag[0] }}</a> <span>{{ tag[1].size }}</span></li>
+  {%- endfor -%}
+</ul>
+{%- endif -%}
+
+{%- endif -%}

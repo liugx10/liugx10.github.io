@@ -1,0 +1,13 @@
+# 导航菜单数据。顶层键是 Minimal Mistakes 约定的名字，改键名要同步改引用它的地方。
+#
+# main 目前被两处使用：
+#   1. 文章页左栏——_config.yml 的 _posts defaults 里 `sidebar: { nav: "main" }`
+#      让侧栏渲染（主题的侧栏容器只在 author_profile 或 page.sidebar 为真时才存在），
+#      同时也把「全部标签」这个入口放进了左栏。
+#   2. 以后要给页头加导航栏，在 _config.yml 里加 `masthead` 相关的用法即可复用这份数据。
+
+main:
+  - title: "首页"
+    url: /
+  - title: "全部标签"
+    url: /tags/

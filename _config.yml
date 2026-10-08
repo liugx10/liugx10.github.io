@@ -65,6 +65,14 @@ permalink: /:categories/:title/
 paginate: 5
 paginate_path: /page:num/
 
+# 标签归档。type: liquid 表示用主题自带的 Liquid 方案：生成一个 /tags/ 索引页，
+# 每个标签是页内一个锚点（/tags/#随笔）。**不需要插件**——每标签独立网址要
+# jekyll-archives，而它不在 GitHub Pages 的插件白名单里，写了会导致线上构建失败。
+# 索引页本体在 _pages/tag-archive.md。
+tag_archive:
+  type: liquid
+  path: /tags/
+
 # ---------- 构建 ----------
 markdown: kramdown
 highlighter: rouge
@@ -104,9 +112,11 @@ defaults:
       type: posts
     values:
       layout: single          # 主题没有名为 post 的 layout，文章用的是 single
-      # 这里故意不设 author_profile：作者资料卡只在首页显示（index.html 里单独打开）。
-      # 注意主题 CSS 无条件给左栏留 200px（.page 是 float: inline-end +
-      # width: calc(100% - 200px)），所以文章页左侧会空出一条，正文宽度不变。
+      # 不设 author_profile：作者资料卡只在首页显示（index.html 里单独打开）。
+      # 但左栏要留给推荐块，所以得给 page.sidebar 一个值——主题的侧栏容器只在
+      # `page.author_profile or layout.author_profile or page.sidebar` 为真时才渲染。
+      # 推荐内容写在 _includes/sidebar-custom.html（主题官方扩展点，不覆盖任何模板）。
+      sidebar: { nav: "main" }
       show_date: true         # 不写这项，文章页不会显示日期
       read_time: false        # 阅读时长按空格分词统计，中文正文会被算成个位数，
                               # 一律显示「少于 1 分钟」，所以关闭
