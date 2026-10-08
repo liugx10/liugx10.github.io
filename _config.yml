@@ -33,9 +33,11 @@ timezone: "Asia/Shanghai"
 # front matter 里的 og_image 覆盖。换图直接替换 assets/images/ 下这个文件即可。
 og_image: "/assets/images/og-default.png"
 
-# 作者资料卡：显示在左侧栏（文章页由 defaults 打开，首页由 index.html 里的
-# author_profile: true 打开）。avatar 目前是占位图，换真人头像直接替换这个文件即可；
-# 主题把它裁成圆形、最大 110px（.author__avatar img），所以图要正方形、边长 ≥ 220px。
+# 作者资料卡：**只在首页左侧栏显示**，由 index.html front matter 里的
+# author_profile: true 打开（defaults 里故意不给文章页和 _pages 开）。
+# 因为卡片只在这一处渲染，写进 links 的内容（含邮箱）就只会出现在主页。
+# avatar 目前是占位图，换真人头像直接替换这个文件即可；主题把它裁成圆形、
+# 最大 110px（.author__avatar img），所以图要正方形、边长 ≥ 220px。
 author:
   name: "Liu Guoxuan"
   avatar: "/assets/images/avatar-default.png"
@@ -47,6 +49,9 @@ author:
     - label: "个人主页"
       icon: "fas fa-fw fa-home"
       url: "https://liugx10.github.io"
+    - label: "邮箱"
+      icon: "fas fa-fw fa-envelope"
+      url: "mailto:liugx17@tsinghua.org.cn"   # 因为卡片只在主页渲染，邮箱也只出现在主页
 
 footer:
   links:
@@ -99,7 +104,9 @@ defaults:
       type: posts
     values:
       layout: single          # 主题没有名为 post 的 layout，文章用的是 single
-      author_profile: true
+      # 这里故意不设 author_profile：作者资料卡只在首页显示（index.html 里单独打开）。
+      # 注意主题 CSS 无条件给左栏留 200px（.page 是 float: inline-end +
+      # width: calc(100% - 200px)），所以文章页左侧会空出一条，正文宽度不变。
       show_date: true         # 不写这项，文章页不会显示日期
       read_time: false        # 阅读时长按空格分词统计，中文正文会被算成个位数，
                               # 一律显示「少于 1 分钟」，所以关闭
@@ -110,8 +117,7 @@ defaults:
       path: "_pages"
       type: pages
     values:
-      layout: single
-      author_profile: true
+      layout: single          # 同样不设 author_profile，独立页面也不显示作者卡
 
 # 不发布到网站的文件（前 7 项是 Jekyll 默认值，必须一并列出，否则设置 exclude 会覆盖默认值）
 exclude:

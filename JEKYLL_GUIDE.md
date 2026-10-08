@@ -268,6 +268,9 @@ author:
     - label: "个人主页"
       icon: "fas fa-fw fa-home"
       url: "https://liugx10.github.io"
+    - label: "邮箱"
+      icon: "fas fa-fw fa-envelope"
+      url: "mailto:liugx17@tsinghua.org.cn"
 ```
 
 | 字段 | 说明 |
@@ -275,9 +278,11 @@ author:
 | `name` | 显示在侧栏，链到网站首页。 |
 | `avatar` | 被裁成圆形、最大 **110px**（CSS 里 `.author__avatar img` 的 `max-width`，还带 5px 内边距和 1px 边框）。所以图要用**正方形、边长至少 220px**，否则糊。换头像直接替换同名文件。 |
 | `bio` | 简介。 |
-| `links` | 社交链接列表，`icon` 用 Font Awesome 类名（主题的 FA 是 CDN 上的 `@latest`，类名请先确认当前版本存在，否则页面上是空白方块）。主题模板里留了一段注释示例（`Custom Social Profile Link`），加链接可参照。邮箱这类写 `url: "mailto:你的地址"` 即可——**但注意加进侧栏等于把地址明文公开在页面 HTML 里**（首页、每篇文章页都有），会被爬虫采集。 |
+| `links` | 社交链接列表，`icon` 用 Font Awesome 类名（主题的 FA 是 CDN 上的 `@latest`，类名请先确认当前版本存在，否则页面上是空白方块）。邮箱这类写 `url: "mailto:地址"` 即可。**注意**：写进这里的每一项都会以明文出现在页面 HTML 里、会被爬虫采集——现在卡片只在首页渲染，所以只暴露在主页；哪天把 `author_profile` 加回 `defaults`，这些信息就会跟着出现在每一篇文章页上。 |
 
-**谁在哪儿显示**：文章页由 `_config.yml` 的 `defaults` 打开（`author_profile: true`）；**首页不在 `defaults` 的覆盖范围内**（它只覆盖 `_posts` 和 `_pages`），所以在 `index.html` 的 front matter 里单独写了一行。两者漏一个，对应页面的左栏就空着——而主题 CSS 仍会给左栏留出 200px（`.archive`、`.page` 都是 `float: inline-end; width: calc(100% - 200px)`），看到的现象是正文右边空一条。
+**谁在哪儿显示：只有首页。** 打开它的是 `index.html` front matter 里的 `author_profile: true`；`defaults` 里**故意不设**这一项，所以文章页和独立页面都没有左栏。因为卡片只在这一处渲染，写进 `links` 的内容（包括邮箱）也就只出现在主页。
+
+**一个已知副作用（属正常，不是 bug）**：主题 CSS 是**无条件**给左栏留 200px 的（`.page` 是 `float: inline-end; width: calc(100% - 200px); padding-inline-end: 200px`），所以文章页没有卡片时，**正文宽度不变、左右各空 200px**，观感是正文变成居中的窄栏。**别用 `classes: wide` 去修**——它只把 `padding-inline-end` 归零，结果反而左右不对称（主题里 `:has()`、`without-sidebar` 之类的机制一个都没有，没有现成的"无左栏"形态）。真想改就用自定义样式覆盖 `.page` 的宽度。
 
 ### 加导航菜单
 
