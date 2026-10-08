@@ -53,7 +53,7 @@ remote_theme: "mmistakes/minimal-mistakes@4.28.1"
 | 路径 | 作用 |
 |---|---|
 | `_config.yml` | 站点全局配置：标题、描述、主题、插件、文章默认值、排除文件等。**改完必须重启本地服务才生效。** |
-| `index.html` | 首页。使用主题的 `layout: home`，会自动列出 `_posts/` 里的文章。 |
+| `index.html` | 首页。使用主题的 `layout: home`，会自动列出 `_posts/` 里的文章；front matter 里的 `author_profile: true` 让左侧显示作者资料卡（见第六节）。 |
 | `_posts/` | 博客文章，一篇一个文件。 |
 | `_data/ui-text.yml` | 主题界面文案的简体中文版（`最新文章`、`下一页`、`目录` 等 47 个键）。**必须存在**，见第一节末尾。想把界面上某个词换掉，改这里。 |
 | `_includes/social-share.html` | 文章页底部的分享按钮（微博 / QQ 空间 / 微信、钉钉、飞书二维码 / 复制链接），覆盖主题自带的 X / Facebook / LinkedIn / Bluesky 版本。详见第六节「改分享按钮」。 |
@@ -72,7 +72,7 @@ Jekyll 靠**目录名**识别用途，新建后自动生效，通常不用改配
 | `_layouts/` | 页面模板。Minimal Mistakes 提供 `default`、`home`、`single`、`archive`、`splash` 等（**没有 `post`**）；在这里新建**同名文件**即可覆盖主题的版本。 |
 | `_includes/` | 可复用的 HTML 片段（页头、页脚、`head` 等），同样按文件名覆盖。**已创建**，目前只放了 `social-share.html`。 |
 | `_sass/` | SCSS 片段。覆盖 `_sass/minimal-mistakes/_variables.scss` 可整体调配色和字体。 |
-| `assets/` | 样式表和图片。放图片最常用的目录。**已创建**，目前只有 `images/og-default.png`。 |
+| `assets/` | 样式表和图片。放图片最常用的目录。**已创建**，目前有 `images/og-default.png`（分享卡片缩略图）和 `images/avatar-default.png`（侧栏头像），两张都是占位图。 |
 | `_pages/` | 独立页面（关于、分类归档等）。已在 `_config.yml` 的 `include` 里声明，放进去就会被构建。 |
 | `_data/` | YAML 数据文件，已存在（`ui-text.yml`）。再加 `_data/navigation.yml` 可以给页头加导航菜单。 |
 | `_drafts/` | 草稿。文件名**不需要日期**，只有加 `--drafts` 参数预览时才可见，不会发布。 |
@@ -251,6 +251,30 @@ minimal_mistakes_skin: "default"
 两个刻意的决定：**样式和脚本都内联在这个文件里**，不依赖 `_includes/head/custom.html` 之类的挂载点——本仓库没有本地构建，挂载点没生效的话样式会静默丢失且不报错；配色按 default 皮肤写死成浅色，将来换成 `dark` 等深色皮肤时要同步改 `.mm-share__popover` 的 `background` / `border` / `color`。
 
 整份改动只有一个文件，**删掉它即还原成主题自带的分享按钮**。
+
+### 侧栏的「作者资料卡」
+
+文章页和首页左侧那一栏（主题的 `.sidebar`：实测宽 200px、超宽屏 300px，`opacity: .75` 悬停变不透明，滚动时吸顶）里装什么，由 `_config.yml` 的 `author` 块决定：
+
+```yaml
+author:
+  name: "Liu Guoxuan"
+  avatar: "/assets/images/avatar-default.png"
+  bio: "记录技术与生活"
+  links:
+    - label: "GitHub"
+      icon: "fab fa-fw fa-github"
+      url: "https://github.com/liugx10"
+```
+
+| 字段 | 说明 |
+|---|---|
+| `name` | 显示在侧栏，链到网站首页。 |
+| `avatar` | 被裁成圆形、最大 **110px**（CSS 里 `.author__avatar img` 的 `max-width`，还带 5px 内边距和 1px 边框）。所以图要用**正方形、边长至少 220px**，否则糊。换头像直接替换同名文件。 |
+| `bio` | 简介。 |
+| `links` | 社交链接列表，`icon` 用 Font Awesome 类名。主题模板里留了一段注释示例（`Custom Social Profile Link`），加链接可参照。 |
+
+**谁在哪儿显示**：文章页由 `_config.yml` 的 `defaults` 打开（`author_profile: true`）；**首页不在 `defaults` 的覆盖范围内**（它只覆盖 `_posts` 和 `_pages`），所以在 `index.html` 的 front matter 里单独写了一行。两者漏一个，对应页面的左栏就空着——而主题 CSS 仍会给左栏留出 200px（`.archive`、`.page` 都是 `float: inline-end; width: calc(100% - 200px)`），看到的现象是正文右边空一条。
 
 ### 加导航菜单
 

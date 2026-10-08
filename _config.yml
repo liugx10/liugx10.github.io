@@ -33,9 +33,12 @@ timezone: "Asia/Shanghai"
 # front matter 里的 og_image 覆盖。换图直接替换 assets/images/ 下这个文件即可。
 og_image: "/assets/images/og-default.png"
 
-# 作者资料卡：显示在文章页左侧栏
+# 作者资料卡：显示在左侧栏（文章页由 defaults 打开，首页由 index.html 里的
+# author_profile: true 打开）。avatar 目前是占位图，换真人头像直接替换这个文件即可；
+# 主题把它裁成圆形、最大 110px（.author__avatar img），所以图要正方形、边长 ≥ 220px。
 author:
   name: "Liu Guoxuan"
+  avatar: "/assets/images/avatar-default.png"
   bio: "记录技术与生活"
   links:
     - label: "GitHub"
