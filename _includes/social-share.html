@@ -1,0 +1,225 @@
+{%- comment -%}
+  文章页底部的分享按钮 —— 覆盖 Minimal Mistakes 4.28.1 主题的同名 include。
+
+  为什么要覆盖：主题自带的 social-share.html 输出的是 X / Facebook / LinkedIn，
+  全是国内用不上的。Jekyll 会从 _includes 目录挂载主题文件，仓库里放一份同路径同名的
+  文件就能整体替换掉，不必改主题。
+
+  为什么样式和脚本直接写在这里：本仓库没有本地构建，推送到 GitHub Pages 之前无法预览，
+  所以不依赖 _includes/head/custom.html 之类的挂载点（万一那个挂载点没生效，样式会
+  静默丢失且没有任何报错）。整份改动就只有这一个文件，删掉它即可完全还原。
+
+  六个按钮分三类：
+
+  1. 微博、QQ 空间 —— 有公开的网页分享接口，跳过去即可。
+  2. 复制链接 —— 内联脚本写剪贴板。
+  3. 微信、钉钉、飞书 —— 这三个都**没有**网页分享接口（把内容分享进会话必须走客户端内的
+     分享 JSAPI，网页调不到），所以只能：
+       · 用 details 弹一张二维码，读者拿手机扫；
+       · 钉钉、飞书再多给一条应用深链（钉钉「统一跳转协议」、飞书 AppLink），桌面上装了
+         客户端就能一键在应用里打开，然后自己转发。没装客户端时这条链点是没反应的，
+         所以它只做兜底，主入口始终是二维码。
+     二维码由第三方服务现画现给：api.qrserver.com（goqr.me，免费、无需 key、HTTPS）。
+     三个二维码内容相同（都是本页地址），只是提示文字不同；换服务商只改下面 qr_api
+     这一行，接口要收 url 编码后的地址。
+
+  配色是照 default 皮肤（浅色）写的，弹层底色直接写死成白色。以后若换成 dark 之类的
+  深色皮肤，需要把 .mm-share__popover 的 background / border / color 一并改掉。
+{%- endcomment -%}
+
+{%- assign qr_api = "https://api.qrserver.com/v1/create-qr-code/?size=180x180&data=" -%}
+
+{%- comment -%} 主题调用时会传 include.locale，没传就退回站点语言 {%- endcomment -%}
+{%- assign locale = include.locale | default: site.locale -%}
+{%- assign share_url = page.url | absolute_url -%}
+{%- assign share_url_enc = share_url | url_encode -%}
+{%- assign share_title = page.title | default: site.title -%}
+{%- assign share_title_enc = share_title | url_encode -%}
+{%- assign share_summary = page.description | default: site.description | default: share_title -%}
+{%- assign share_summary_enc = share_summary | url_encode -%}
+{%- assign share_site_enc = site.title | url_encode -%}
+{%- comment -%}
+  share_url_enc 是 Liquid 的 url_encode（Ruby 的 CGI.escape），和下面飞书要的
+  encodeURIComponent 对本站文章地址等价：permalink 是 /:categories/:title/，
+  不带 ! ' ( ) * 这些两者处理不同的字符。若以后网址里出现查询串，飞书那条要按
+  「先编码参数再整体编码」的规则双层编码。
+{%- endcomment -%}
+
+{%- comment -%}
+  主题是在 _layouts/single.html 里判断 page.share 后再 include 的，这里再判一次：
+  万一哪天 layout 不判了，_pages/ 里那些 layout: single 的页面（关于、归档……）
+  也会长出分享按钮。defaults 只给 _posts 设了 share: true。
+{%- endcomment -%}
+{%- if page.share -%}
+<div class="mm-share">
+  <h4 class="mm-share__title">{{ site.data.ui-text[locale].share_on_label | default: "分享" }}</h4>
+
+  <ul class="mm-share__list">
+    <li>
+      <a class="mm-share__btn mm-share__btn--weibo"
+         href="https://service.weibo.com/share/share.php?url={{ share_url_enc }}&amp;title={{ share_title_enc }}"
+         target="_blank" rel="noopener noreferrer">微博</a>
+    </li>
+    <li>
+      <a class="mm-share__btn mm-share__btn--qzone"
+         href="https://sns.qzone.qq.com/cgi-bin/qzshare/cgi_qzshare_onekey?url={{ share_url_enc }}&amp;title={{ share_title_enc }}&amp;summary={{ share_summary_enc }}&amp;site={{ share_site_enc }}"
+         target="_blank" rel="noopener noreferrer">QQ 空间</a>
+    </li>
+    <li>
+      {%- comment -%}用 details 做展开，省掉「点开再点别处关掉」之外的全部脚本{%- endcomment -%}
+      <details class="mm-share__app">
+        <summary class="mm-share__btn mm-share__btn--wechat">微信</summary>
+        <div class="mm-share__popover">
+          <img src="{{ qr_api }}{{ share_url_enc }}" alt="用微信扫一扫打开本页" width="180" height="180" loading="lazy">
+          <p class="mm-share__hint">用微信扫一扫，在手机上打开本页</p>
+        </div>
+      </details>
+    </li>
+    <li>
+      <details class="mm-share__app">
+        <summary class="mm-share__btn mm-share__btn--dingtalk">钉钉</summary>
+        <div class="mm-share__popover">
+          <img src="{{ qr_api }}{{ share_url_enc }}" alt="用钉钉扫一扫打开本页" width="180" height="180" loading="lazy">
+          <p class="mm-share__hint">用钉钉扫一扫，在手机上打开本页</p>
+          <p class="mm-share__deep"><a href="dingtalk://dingtalkclient/page/link?url={{ share_url_enc }}&amp;pc_slide=true">在钉钉中打开</a></p>
+        </div>
+      </details>
+    </li>
+    <li>
+      <details class="mm-share__app">
+        <summary class="mm-share__btn mm-share__btn--feishu">飞书</summary>
+        <div class="mm-share__popover">
+          <img src="{{ qr_api }}{{ share_url_enc }}" alt="用飞书扫一扫打开本页" width="180" height="180" loading="lazy">
+          <p class="mm-share__hint">用飞书扫一扫，在手机上打开本页</p>
+          <p class="mm-share__deep"><a href="https://applink.feishu.cn/client/web_url/open?mode=window&amp;url={{ share_url_enc }}">在飞书中打开</a></p>
+        </div>
+      </details>
+    </li>
+    <li>
+      <button type="button" class="mm-share__btn mm-share__btn--copy" data-mm-share-url="{{ share_url }}">复制链接</button>
+    </li>
+  </ul>
+</div>
+
+<style>
+  /* 所有选择器都带上 .mm-share 作用域：Markdown 会按 .page__content 那一套给
+     ul / li / a / h4 套样式，作用域能保证特异性压过主题，不然按钮行会冒出圆点和缩进。 */
+  .mm-share { margin-top: 2em; }
+  /* 若主题的 single.html 已经用 .page__share 包了一层（自带 margin-top），避免叠加 */
+  .page__share .mm-share { margin-top: 0; }
+
+  .mm-share .mm-share__title { margin: 0 0 .6em; font-size: .875em; text-transform: uppercase; letter-spacing: .04em; }
+
+  /* 弹层以整个按钮行为定位基准（不是各自的按钮），这样无论屏幕多窄、按钮怎么换行，
+     二维码都落在行的下方且右对齐，不会顶出视口。 */
+  .mm-share ul.mm-share__list { position: relative; display: flex; flex-wrap: wrap; gap: .45em; margin: 0; padding: 0; list-style: none; }
+  .mm-share ul.mm-share__list > li { margin: 0; }
+  .mm-share ul.mm-share__list > li::before { content: none; } /* 有的皮肤给 li 加圆点，这里去掉 */
+
+  .mm-share .mm-share__btn {
+    display: inline-block;
+    padding: .35em .8em;
+    border: 0;
+    border-radius: .25em;
+    background: #6c757d;
+    color: #fff;
+    font-family: inherit;
+    font-size: .85em;
+    line-height: 1.6;
+    text-decoration: none;
+    white-space: nowrap;
+    cursor: pointer;
+  }
+  /* 只压不透明度，不动 color：QQ 空间是黄底深字，改 color 会在悬停时糊成一片 */
+  .mm-share .mm-share__btn:hover,
+  .mm-share .mm-share__btn:focus { opacity: .85; }
+
+  .mm-share .mm-share__btn--weibo    { background: #e6162d; }
+  .mm-share .mm-share__btn--qzone    { background: #ffce00; color: #33383d; }
+  .mm-share .mm-share__btn--wechat   { background: #07c160; }
+  .mm-share .mm-share__btn--dingtalk { background: #0089ff; }
+  .mm-share .mm-share__btn--feishu   { background: #3370ff; }
+  /* 复制链接保持中性灰，上面的 background: #6c757d 已经是，不用另写 */
+
+  /* 把 summary 伪装成按钮：去掉浏览器自带的三角标记 */
+  .mm-share .mm-share__app > summary { list-style: none; }
+  .mm-share .mm-share__app > summary::-webkit-details-marker { display: none; }
+  .mm-share .mm-share__app > summary::marker { content: ""; }
+
+  .mm-share .mm-share__popover {
+    position: absolute;
+    z-index: 30;
+    top: 100%;
+    right: 0;
+    margin-top: .5em;
+    width: 12.5em;
+    padding: .6em;
+    background: #fff;
+    border: 1px solid #ddd;
+    border-radius: .25em;
+    box-shadow: 0 2px 10px rgba(0, 0, 0, .15);
+    text-align: center;
+  }
+  .mm-share .mm-share__popover img { display: block; margin: 0 auto .4em; max-width: 100%; height: auto; }
+  .mm-share .mm-share__hint { margin: 0; color: #666; font-size: .75em; line-height: 1.4; }
+  .mm-share .mm-share__deep { margin: .5em 0 0; padding-top: .45em; border-top: 1px solid #eee; font-size: .75em; line-height: 1.4; }
+</style>
+
+<script>
+  (function () {
+    // 复制链接。github.io 是 HTTPS，正常走 navigator.clipboard；
+    // 本地用 http 预览时它不是 secure context，退回 execCommand。
+    var copyBtn = document.querySelector('.mm-share__btn--copy');
+    if (copyBtn) {
+      copyBtn.addEventListener('click', function () {
+        var text = copyBtn.getAttribute('data-mm-share-url');
+        var label = copyBtn.textContent;
+
+        var feedback = function (ok) {
+          copyBtn.textContent = ok ? '已复制' : '复制失败';
+          setTimeout(function () { copyBtn.textContent = label; }, 1500);
+        };
+
+        var fallback = function () {
+          var ta = document.createElement('textarea');
+          ta.value = text;
+          ta.setAttribute('readonly', '');
+          ta.style.position = 'fixed';
+          ta.style.left = '-9999px';
+          document.body.appendChild(ta);
+          ta.select();
+          var ok = false;
+          try { ok = document.execCommand('copy'); } catch (e) { ok = false; }
+          document.body.removeChild(ta);
+          feedback(ok);
+        };
+
+        if (navigator.clipboard && window.isSecureContext) {
+          navigator.clipboard.writeText(text).then(function () { feedback(true); }, fallback);
+        } else {
+          fallback();
+        }
+      });
+    }
+
+    // 二维码是浮层：点到别处就收起，同时只允许开一个（否则三个弹层会叠在同一处）
+    var apps = document.querySelectorAll('.mm-share__app');
+    if (apps.length) {
+      document.addEventListener('click', function (e) {
+        for (var i = 0; i < apps.length; i++) {
+          if (apps[i].open && !apps[i].contains(e.target)) { apps[i].open = false; }
+        }
+      });
+
+      for (var i = 0; i < apps.length; i++) {
+        apps[i].addEventListener('toggle', function () {
+          if (!this.open) { return; }
+          for (var j = 0; j < apps.length; j++) {
+            if (apps[j] !== this) { apps[j].open = false; }
+          }
+        });
+      }
+    }
+  })();
+</script>
+{%- endif -%}

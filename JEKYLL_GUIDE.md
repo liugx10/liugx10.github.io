@@ -56,19 +56,20 @@ remote_theme: "mmistakes/minimal-mistakes@4.28.1"
 | `index.html` | 首页。使用主题的 `layout: home`，会自动列出 `_posts/` 里的文章。 |
 | `_posts/` | 博客文章，一篇一个文件。 |
 | `_data/ui-text.yml` | 主题界面文案的简体中文版（`最新文章`、`下一页`、`目录` 等 47 个键）。**必须存在**，见第一节末尾。想把界面上某个词换掉，改这里。 |
+| `_includes/social-share.html` | 文章页底部的分享按钮（微博 / QQ 空间 / 微信、钉钉、飞书二维码 / 复制链接），覆盖主题自带的 X / Facebook / LinkedIn 版本。详见第六节「改分享按钮」。 |
 | `README.md` | 仓库说明，已排除，不发布。 |
 | `CLAUDE.md`、`JEKYLL_GUIDE.md` | 开发文档，已排除，不发布。 |
 
 > 首页文件名**必须是 `.html`**。分页插件 `jekyll-paginate` 只把根目录下的 `index.html` 当作分页模板，改名成 `index.md` 后分页会被静默跳过（日志里只有一行 warning，网站上看不出来），超过 `paginate` 数量的文章就再也翻不到了。
 
-### Jekyll 约定目录（除 `_data/` 外目前还不存在，需要时自己新建）
+### Jekyll 约定目录（目前只建了 `_data/` 和 `_includes/`，其余需要时自己新建）
 
 Jekyll 靠**目录名**识别用途，新建后自动生效，通常不用改配置：
 
 | 路径 | 作用 |
 |---|---|
 | `_layouts/` | 页面模板。Minimal Mistakes 提供 `default`、`home`、`single`、`archive`、`splash` 等（**没有 `post`**）；在这里新建**同名文件**即可覆盖主题的版本。 |
-| `_includes/` | 可复用的 HTML 片段（页头、页脚、`head` 等），同样按文件名覆盖。 |
+| `_includes/` | 可复用的 HTML 片段（页头、页脚、`head` 等），同样按文件名覆盖。**已创建**，目前只放了 `social-share.html`。 |
 | `_sass/` | SCSS 片段。覆盖 `_sass/minimal-mistakes/_variables.scss` 可整体调配色和字体。 |
 | `assets/` | 样式表和图片。放图片最常用的目录。 |
 | `_pages/` | 独立页面（关于、分类归档等）。已在 `_config.yml` 的 `include` 里声明，放进去就会被构建。 |
@@ -226,6 +227,27 @@ minimal_mistakes_skin: "default"
 注意 `_layouts/` 里**没有 `post.html`**，文章用的是 `_layouts/single.html`。
 
 复制到仓库**同名路径**后即可自由修改。改动越少越不容易在主题更新后出问题。
+
+### 改分享按钮
+
+文章页底部的分享按钮来自 `_includes/social-share.html`。仓库里放着的那份**覆盖**了主题自带的版本（主题那份是 X / Facebook / LinkedIn，国内用不上）。按钮显示与否由 `_config.yml` 里 `_posts` 默认值中的 `share: true` 控制；首页用的是 `layout: home`，本身没有分享块。
+
+加平台就是往 `<ul>` 里加一个 `<li>`，六个现有项分三类：
+
+| 平台 | 实现方式 |
+|---|---|
+| 微博 | 跳到 `service.weibo.com/share/share.php`，网址和标题作为查询参数带上 |
+| QQ 空间 | 跳到 `sns.qzone.qq.com/cgi-bin/qzshare/cgi_qzshare_onekey`，同上 |
+| 微信 | 没有网页分享接口（腾讯早已关闭），只能弹二维码让读者扫 |
+| 钉钉 | 同上，另外在弹层里给一条官方「统一跳转协议」深链 `dingtalk://dingtalkclient/page/link?url=…` |
+| 飞书 | 同上，另外给一条官方 AppLink `https://applink.feishu.cn/client/web_url/open?mode=window&url=…` |
+| 复制链接 | 十几行内联脚本，优先用 `navigator.clipboard`，本地 http 预览时退回 `execCommand` |
+
+三个二维码内容相同（都是本页地址），只是提示文字不同；都由第三方接口 `api.qrserver.com` 现画现给，换服务商只改文件顶部 `qr_api` 那一行。钉钉和飞书那两条深链是**兜底**：桌面装了对应客户端才能唤起（钉钉还会开在 PC 侧边栏），没装的话点了没有任何反应，所以主入口始终是二维码。
+
+两个刻意的决定：**样式和脚本都内联在这个文件里**，不依赖 `_includes/head/custom.html` 之类的挂载点——本仓库没有本地构建，挂载点没生效的话样式会静默丢失且不报错；配色按 default 皮肤写死成浅色，将来换成 `dark` 等深色皮肤时要同步改 `.mm-share__popover` 的 `background` / `border` / `color`。
+
+整份改动只有一个文件，**删掉它即还原成主题自带的分享按钮**。
 
 ### 加导航菜单
 
