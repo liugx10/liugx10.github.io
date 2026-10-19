@@ -1,11 +1,17 @@
 {%- comment -%}
-  文章页左栏的推荐内容 —— 写在主题官方指定的扩展点上，**不覆盖任何主题模板**。
+  文章页左栏内容（目录 + 推荐块）—— 写在主题官方指定的扩展点上，
+  这个文件本身**不覆盖任何主题模板**。
 
   _includes/sidebar.html 的最后一行是无条件的 `{% include sidebar-custom.html %}`，
   而主题里的 sidebar-custom.html 是个 0 字节的空文件；官方文档（docs/_docs/10-layouts.md）
   明说它就是给使用者往侧栏底部塞自定义内容用的。所以这里是主题留的口子，不是绕路。
 
-  三块内容：相关文章（按当前文章的分类/标签算）、最新文章、标签。
+  四块内容：目录、相关文章（按当前文章的分类/标签算）、最新文章、标签。
+
+  目录原本由主题 _layouts/single.html 渲染在正文右侧（.sidebar__right），
+  现在改为在这里渲染。仓库里的 _layouts/single.html 覆盖了主题版本、
+  删掉了右侧容器；TOC 的 .toc / .toc__menu 样式是全局的，放进左栏可直接复用。
+  `page.toc` 仍然控制开关，`_config.yml` 的 _posts defaults 已默认打开。
 
   两个前提，破坏任何一个这里就整块不渲染：
   1. 侧栏容器只在 `page.author_profile or layout.author_profile or page.sidebar` 为真时
@@ -14,11 +20,30 @@
   2. 标签块依赖 _config.yml 的 `tag_archive`；链接形式照抄主题 _includes/tag-list.html
      （type: liquid 时是 /tags/#锚点）。
 
-  不新增 CSS：标题用主题的 .nav__title、列表用 .nav__items，字号和颜色由 .sidebar 那套规则继承。
+  不新增 CSS：目录复用主题全局的 .toc / .toc__menu，块标题用 .nav__title、
+  推荐列表用 .nav__items，字号和颜色由 .sidebar 那套规则继承。
 {%- endcomment -%}
 
 {%- if page.layout != "home" -%}
 {%- assign locale = site.locale -%}
+
+{%- comment -%}
+  目录。content 是 Jekyll 渲染好的正文 HTML，在 layout 里定义、include 能读到；
+  主题自带的 _includes/toc.html 就靠它抽标题，参数与主题原来放在右侧时保持一致。
+  没有标题时 toc.html 返回空串，这里用 strip 判断后再决定是否输出空壳。
+{%- endcomment -%}
+{%- if page.toc -%}
+  {%- capture sidebar_toc -%}
+    {%- include toc.html sanitize=true html=content h_min=1 h_max=6 class="toc__menu" skip_no_ids=true -%}
+  {%- endcapture -%}
+  {%- assign sidebar_toc = sidebar_toc | strip -%}
+  {%- if sidebar_toc != "" -%}
+<nav class="toc" aria-label="{{ page.toc_label | default: site.data.ui-text[locale].toc_label | default: '目录' }}">
+  <header><h4 class="nav__title"><i class="fas fa-{{ page.toc_icon | default: 'file-alt' }}" aria-hidden="true"></i> {{ page.toc_label | default: site.data.ui-text[locale].toc_label | default: "目录" }}</h4></header>
+  {{ sidebar_toc }}
+</nav>
+  {%- endif -%}
+{%- endif -%}
 
 {%- comment -%}
   others = 除当前文章以外的全部文章，下面两块都用它。

@@ -135,6 +135,11 @@ defaults:
       show_date: true         # 不写这项，文章页不会显示日期
       read_time: false        # 阅读时长按空格分词统计，中文正文会被算成个位数，
                               # 一律显示「少于 1 分钟」，所以关闭
+      toc: true               # 目录渲染在左栏（_includes/sidebar-custom.html）；
+                              # 正文没有标题时自动不输出
+      classes: wide           # 右侧目录已取消（_layouts/single.html 删掉了
+                              # .sidebar__right），用 wide 把主题为它预留的
+                              # padding-inline-end（200px / 超宽屏 300px）归零
       share: true             # 文章底部的分享按钮
       related: true           # 文章底部的「猜您还喜欢」
   # _pages

@@ -5,7 +5,6 @@ date: 2026-10-08
 categories: 技术
 tags: ["ISP", "RAW", "图像处理", "学习计划"]
 toc: true
-toc_sticky: true
 excerpt: "一份按真实工作链排序的 AI-ISP 学习计划，每周给出目标、任务清单、产出和自测题：从传感器成像物理和手写 ISP 起步，经过 RAW-to-RGB 训练、3A 调优、多帧与生成式，最后落到量化压缩与 TensorRT 部署。12 周，每周 15–20 小时。"
 ---
 

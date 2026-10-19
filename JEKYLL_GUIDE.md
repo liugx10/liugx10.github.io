@@ -58,7 +58,8 @@ remote_theme: "mmistakes/minimal-mistakes@4.28.1"
 | `_data/ui-text.yml` | 主题界面文案的简体中文版（`最新文章`、`下一页`、`目录` 等 47 个键）。**必须存在**，见第一节末尾。想把界面上某个词换掉，改这里。 |
 | `_includes/social-share.html` | 文章页底部的分享按钮（微博 / QQ 空间 / 微信、钉钉、飞书二维码 / 复制链接），覆盖主题自带的 X / Facebook / LinkedIn / Bluesky 版本。详见第六节「改分享按钮」。 |
 | `assets/images/og-default.png` | 分享卡片的默认缩略图（1200×630），由 `_config.yml` 的 `og_image` 指向。目前是**没有文字的占位图**，换图直接替换文件即可。 |
-| `_includes/sidebar-custom.html` | 文章页左栏的推荐块（相关文章 / 最新文章 / 标签）。写在主题官方扩展点上，见第六节「左栏推荐块」。 |
+| `_includes/sidebar-custom.html` | 文章页左栏的目录 + 推荐块（相关文章 / 最新文章 / 标签）。写在主题官方扩展点上，见第六节「文章页左栏」。 |
+| `_layouts/single.html` | 文章页模板，覆盖主题 4.28.1 的版本。与主题的唯一差别是**删掉了正文右侧的目录容器**，目录改由左栏渲染。升级主题时需要和主题新版逐行 diff，见第六节。 |
 | `_includes/category-list.html` | 文章页「分类:」那一行。**覆盖了主题同名 include**，为了列出全部分类（含还没有文章的）。清单在 `_config.yml` 的 `category_list`。 |
 | `_data/navigation.yml` | 导航数据，顶层键 `main`。文章页左栏的「首页 / 分类」来自这里，以后加页头导航也用它。 |
 | `_pages/category-archive.md`、`_pages/tag-archive.md` | `/categories/` 与 `/tags/` 索引页。 |
@@ -67,14 +68,14 @@ remote_theme: "mmistakes/minimal-mistakes@4.28.1"
 
 > 首页文件名**必须是 `.html`**。分页插件 `jekyll-paginate` 只把根目录下的 `index.html` 当作分页模板，改名成 `index.md` 后分页会被静默跳过（日志里只有一行 warning，网站上看不出来），超过 `paginate` 数量的文章就再也翻不到了。
 
-### Jekyll 约定目录（目前只建了 `_data/`、`_includes/`、`assets/`、`_pages/`，其余需要时自己新建）
+### Jekyll 约定目录（目前只建了 `_layouts/`、`_data/`、`_includes/`、`assets/`、`_pages/`，其余需要时自己新建）
 
 Jekyll 靠**目录名**识别用途，新建后自动生效，通常不用改配置：
 
 | 路径 | 作用 |
 |---|---|
-| `_layouts/` | 页面模板。Minimal Mistakes 提供 `default`、`home`、`single`、`archive`、`splash` 等（**没有 `post`**）；在这里新建**同名文件**即可覆盖主题的版本。 |
-| `_includes/` | 可复用的 HTML 片段（页头、页脚、`head` 等），同样按文件名覆盖。**已创建**：`social-share.html`（分享按钮）、`sidebar-custom.html`（左栏推荐块）、`category-list.html`（文章页分类行）。 |
+| `_layouts/` | 页面模板。Minimal Mistakes 提供 `default`、`home`、`single`、`archive`、`splash` 等（**没有 `post`**）；在这里新建**同名文件**即可覆盖主题的版本。**已创建**：`single.html`（删掉右侧目录，目录改到左栏）。 |
+| `_includes/` | 可复用的 HTML 片段（页头、页脚、`head` 等），同样按文件名覆盖。**已创建**：`social-share.html`（分享按钮）、`sidebar-custom.html`（左栏目录 + 推荐块）、`category-list.html`（文章页分类行）。 |
 | `_sass/` | SCSS 片段。覆盖 `_sass/minimal-mistakes/_variables.scss` 可整体调配色和字体。 |
 | `assets/` | 样式表和图片。放图片最常用的目录。**已创建**，目前有 `images/og-default.png`（分享卡片缩略图）和 `images/avatar-default.png`（侧栏头像），两张都是占位图。 |
 | `_pages/` | 独立页面（关于、分类归档等）。已在 `_config.yml` 的 `include` 里声明，放进去就会被构建。**已创建**，目前只有 `tag-archive.md`。 |
@@ -179,8 +180,8 @@ categories: 随笔
 | `categories` | 分类，本站约定只有三类：**随笔 / 技术 / 投资**。这三类的完整清单写在 `_config.yml` 的 `category_list` 里——文章页那行「分类:」会把三类都列出来（**包括还没有文章的**），所以**增删分类要同步改 `_config.yml`**。用空格可写多个，但会形成多级网址，而且它出现在网址里（见下），所以别随手加。细粒度关键词用 `tags`。 |
 | `tags` | 标签，只做展示。不配置归档页的话，文章顶部不会渲染标签。 |
 | `excerpt` | 手动指定列表页显示的摘要。 |
-| `toc` | 写 `true` 会在文章右侧生成目录。 |
-| `toc_sticky` | 写 `true` 让目录跟随滚动。 |
+| `toc` | 目录开关，默认已由 `_config.yml` 的 `_posts` defaults 设为 `true`；目录显示在**左栏**，正文没有标题时自动不显示。 |
+| `toc_sticky` | 不需要写。左栏本身就是吸顶的（`.sidebar.sticky`），这个字段对左栏目录没有作用。 |
 
 几个容易踩的坑：
 
@@ -258,7 +259,7 @@ minimal_mistakes_skin: "default"
 
 ### 侧栏的「作者资料卡」
 
-文章页和首页左侧那一栏（主题的 `.sidebar`：实测宽 200px、超宽屏 300px，`opacity: .75` 悬停变不透明，滚动时吸顶）里装什么，由 `_config.yml` 的 `author` 块决定：
+首页左侧那一栏（主题的 `.sidebar`：实测宽 200px、超宽屏 300px，`opacity: .75` 悬停变不透明，滚动时吸顶）里装什么，由 `_config.yml` 的 `author` 块决定（文章页的那一栏内容不同，见下面「文章页左栏」）：
 
 ```yaml
 author:
@@ -286,25 +287,28 @@ author:
 
 **谁在哪儿显示：只有首页。** 打开它的是 `index.html` front matter 里的 `author_profile: true`；`defaults` 里**故意不设**这一项，所以文章页和独立页面都没有左栏。因为卡片只在这一处渲染，写进 `links` 的内容（包括邮箱）也就只出现在主页。
 
-**文章页左侧那条 200px 的空白已经用上了**——现在放的是推荐块，见下面「左栏推荐块」。它的宽度是主题 CSS **无条件**预留的（`.page` 是 `float: inline-end; width: calc(100% - 200px); padding-inline-end: 200px`），主题里没有「无左栏就还回空间」的机制，所以**别用 `classes: wide` 去调它**（`wide` 只把 `padding-inline-end` 归零，结果左右不对称）。
+**文章页左侧那条 200px 的空白已经用上了**——现在放的是目录 + 推荐块，见下面「文章页左栏」。它的宽度是主题 CSS **无条件**预留的（`.page` 是 `float: inline-end; width: calc(100% - 200px); padding-inline-end: 200px`），主题里没有「无左栏就还回空间」的机制，所以**别用 `classes: wide` 去调左栏宽度**（`wide` 只把 `padding-inline-end` 归零）。不过右侧目录取消后，正是用 `classes: wide` 把主题给右侧目录预留的那段 `padding-inline-end` 收回来。
 
-### 左栏推荐块
+### 文章页左栏：目录 + 推荐块
 
-文章页左栏的三块内容——**相关文章 / 最新文章 / 标签**——写在 **`_includes/sidebar-custom.html`**，这是**主题官方留的扩展点，不是覆盖模板**：
+文章页左栏的四块内容——**目录 / 相关文章 / 最新文章 / 标签**——写在 **`_includes/sidebar-custom.html`**。推荐块部分仍然是**主题官方留的扩展点，不是覆盖模板**：
 
 > `_includes/sidebar.html` 的最后一行是 `{% include sidebar-custom.html %}`，而主题里的这个文件是 **0 字节的空文件**。官方文档 `docs/_docs/10-layouts.md` 原话：*"For more advanced customization, create `_includes/sidebar-custom.html` in your site. Its contents are included at the bottom of the sidebar on every page…"*
 
-所以**升级主题时不需要比对任何模板文件**；删掉这个文件即完全恢复原状。
+目录则不同：主题把 TOC 渲染在正文右侧（`<aside class="sidebar__right">`），所以仓库里用 **`_layouts/single.html` 覆盖了主题模板**，删掉那个容器，再在 `sidebar-custom.html` 里调用主题的 `_includes/toc.html` 生成目录。`.toc` / `.toc__menu` 的样式在主题里是全局的，放进左栏可以直接复用。
+
+因此：**升级主题时 `sidebar-custom.html` 不需要比对，但 `_layouts/single.html` 必须和主题新版逐行 diff**，只合并主题的改动、保留“删除 `sidebar__right`”这一处差异。要恢复主题原本的右侧目录，需要同时删掉 `_layouts/single.html`、`sidebar-custom.html` 里的目录块，以及默认配置里的 `classes: wide`。
 
 | 块 | 数据来源 |
 |---|---|
+| 目录 | 主题 `_includes/toc.html` 从 layout 的 `content` 抽取标题；`page.toc` 控制开关，正文无标题时不渲染 |
 | 相关文章 | 遍历 `site.posts`，取与本篇有共同 `categories` 或 `tags` 的最多 5 条；一条都没有时整块不渲染 |
 | 最新文章 | `site.posts` 里除本篇外的 5 条；没有别的文章时不渲染（不输出空列表） |
 | 标签 | 遍历 `site.tags`，链到 `site.tag_archive.path` + `#` + `slugify(标签)`，后面跟篇数 |
 
 三个必须知道的点：
 
-1. **左栏容器不会凭空出现。** 主题的 `sidebar.html` 外层条件是 `page.author_profile or layout.author_profile or page.sidebar`。文章页没有作者卡，所以 `_config.yml` 里 `_posts` 的 defaults 写了 `sidebar: { nav: "main" }` 来打开它——那个 nav 就是左栏顶部的「首页 / 分类」。**删掉这一行，整个左栏连同推荐块一起消失。**
+1. **左栏容器不会凭空出现。** 主题的 `sidebar.html` 外层条件是 `page.author_profile or layout.author_profile or page.sidebar`。文章页没有作者卡，所以 `_config.yml` 里 `_posts` 的 defaults 写了 `sidebar: { nav: "main" }` 来打开它——那个 nav 就是左栏顶部的「首页 / 分类」。**删掉这一行，整个左栏连同目录和推荐块一起消失。**
 2. **底部「猜您还喜欢」不是真相关。** 主题 `_layouts/single.html` 传给它的 `posts` 是 `site.related_posts`，而本站没开 `lsi`，Jekyll 的值就退化成**最新 10 篇**——它和左栏「最新文章」是同一批内容，只是形式不同（网格卡片 vs 紧凑列表）。嫌重复就把 `_config.yml` 里 `_posts` 的 `related: true` 改成 `false`。
 3. **标签没有独立网址，这是有意的。** 配置用的是 `tag_archive: {type: liquid}` → 一个 `/tags/` 索引页 + 页内锚点（`/tags/#随笔`）。想要 `/tags/foo/` 那样的独立页面必须用 `jekyll-archives`，而**它不在 GitHub Pages 的插件白名单里**（照着写会导致线上构建失败，已核对 `pages-gem` 的 `dependencies.rb`）。中文标签的锚点是 `id="随笔"`，而链接会被 `relative_url` 编码成 `#%E9%9A%8F%E7%AC%94`——两者等价（浏览器匹配锚点前先解码），线上已确认。
 

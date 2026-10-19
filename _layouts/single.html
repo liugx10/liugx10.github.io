@@ -1,0 +1,97 @@
+---
+layout: default
+---
+{%- comment -%}
+  覆盖 Minimal Mistakes 4.28.1 的 _layouts/single.html。
+
+  与主题原版**只有一处差别**：删掉了正文里的右侧目录容器
+  <aside class="sidebar__right">…</aside>。目录改到左侧栏，
+  由 _includes/sidebar-custom.html 渲染。
+
+  另外两件配套的事：
+  1. TOC 的 `.toc` / `.toc__menu` 样式是全局的，没有绑在
+     `.sidebar__right` 下，所以直接放进左栏就能复用。
+  2. 右侧目录取消后，主题给 `.page` 预留的 padding-inline-end
+     （200px / 超宽屏 300px）会变成空白，需要在 _config.yml 的
+     _posts defaults 里加 `classes: wide` 归零。
+
+  **升级主题时**：把新版本的这个文件与本文件逐行 diff，
+  只合并主题的改动，保留“删除 sidebar__right”这一处差异。
+{%- endcomment -%}
+{%- assign locale = page.locale | default: layout.locale | default: site.locale %}
+
+{% if page.header.overlay_color or page.header.overlay_image or page.header.image %}
+  {% include page__hero.html locale=locale %}
+{% elsif page.header.video.id and page.header.video.provider %}
+  {% include page__hero_video.html %}
+{% endif %}
+
+{% assign breadcrumbs_enabled = site.breadcrumbs %}
+{% if page.breadcrumbs != null %}
+  {% assign breadcrumbs_enabled = page.breadcrumbs %}
+{% endif %}
+{% if page.url != "/" and breadcrumbs_enabled %}
+  {% unless paginator %}
+    {% include breadcrumbs.html locale=locale %}
+  {% endunless %}
+{% endif %}
+
+<div id="main" role="main">
+  {% include sidebar.html locale=locale %}
+
+  <article class="page h-entry" itemscope itemtype="https://schema.org/CreativeWork"{% if page.locale %} lang="{{ page.locale }}"{% endif %}>
+    {% if page.title %}<meta itemprop="headline" content="{{ page.title | replace: '|', '&#124;' | markdownify | strip_html | strip_newlines | escape_once }}">{% endif %}
+    {% if page.excerpt %}<meta itemprop="description" content="{{ page.excerpt | markdownify | strip_html | strip_newlines | escape_once }}">{% endif %}
+    {% if page.date %}<meta itemprop="datePublished" content="{{ page.date | date_to_xmlschema }}">{% endif %}
+    {% if page.last_modified_at %}<meta itemprop="dateModified" content="{{ page.last_modified_at | date_to_xmlschema }}">{% endif %}
+
+    <div class="page__inner-wrap">
+      {% unless page.header.overlay_color or page.header.overlay_image %}
+        <header>
+          {% if page.title -%}
+          <h1 id="page-title" class="page__title p-name" itemprop="headline">
+            <a href="{{ page.url | absolute_url }}" itemprop="url">{{ page.title | markdownify | remove: "<p>" | remove: "</p>" }}</a>
+          </h1>
+          {%- endif %}
+          {% include page__meta.html locale=locale %}
+        </header>
+      {% endunless %}
+
+      <section class="page__content e-content" itemprop="text">
+        {{ content }}
+        {% if page.link %}<div><a href="{{ page.link }}" class="btn btn--primary">{{ site.data.ui-text[locale].ext_link_label | default: "Direct Link" }}</a></div>{% endif %}
+      </section>
+
+      <footer class="page__meta">
+        {% if site.data.ui-text[locale].meta_label %}
+          <h4 class="page__meta-title">{{ site.data.ui-text[locale].meta_label }}</h4>
+        {% endif %}
+        {% include page__taxonomy.html locale=locale %}
+        {% include page__date.html locale=locale %}
+      </footer>
+
+      {% if page.share %}{% include social-share.html locale=locale %}{% endif %}
+
+      {% include post_pagination.html locale=locale %}
+    </div>
+
+    {% if site.comments.provider and page.comments %}
+      {% if jekyll.environment == 'production' %}
+        {% include comments.html locale=locale %}
+      {% else %}
+        <p>
+          Comments are configured with provider: <strong>{{ site.comments.provider }}</strong>,
+          but are disabled in non-production environments.
+        </p>
+      {% endif %}
+    {% endif %}
+  </article>
+
+  {% comment %}<!-- only show related on a post page when `related: true` -->{% endcomment %}
+  {% if page.id and page.related and site.related_posts.size > 0 %}
+    {% include page__related.html locale=locale posts=site.related_posts %}
+  {% comment %}<!-- otherwise show recent posts if no related when `related: true` -->{% endcomment %}
+  {% elsif page.id and page.related %}
+    {% include page__related.html locale=locale posts=site.posts %}
+  {% endif %}
+</div>
